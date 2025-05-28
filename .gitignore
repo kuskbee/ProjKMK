@@ -86,8 +86,6 @@ Plugins/MonsterPlugin/Content/Wyvern/Material/*
 Plugins/MonsterPlugin/Content/Wyvern/Mesh/*
 Plugins/MonsterPlugin/Content/Wyvern/SEQAnim/*
 Plugins/MonsterPlugin/Content/Wyvern/Texture/*
-Plugins/MonsterPlugin/Content/Wyvern/BP_Character.uasset/*
-Plugins/MonsterPlugin/Content/Wyvern/Wyvern_SM.uasset/*
 Plugins/MonsterPlugin/Content/Blueprints/*
 Plugins/MonsterPlugin/Content/Characters/*
 Plugins/MonsterPlugin/Content/Megascans/*
