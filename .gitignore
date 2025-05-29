@@ -91,4 +91,5 @@ Plugins/MonsterPlugin/Content/Characters/*
 Plugins/MonsterPlugin/Content/Megascans/*
 Plugins/MonsterPlugin/Content/MSPresets/*
 Plugins/MonsterPlugin/Content/ThirdPerson/*
-
+Plugins/Portal/Content/StarterContent/*
+Plugins/Portal/Content/VFX/*
