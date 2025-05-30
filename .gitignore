@@ -93,3 +93,7 @@ Plugins/MonsterPlugin/Content/MSPresets/*
 Plugins/MonsterPlugin/Content/ThirdPerson/*
 Plugins/Portal/Content/StarterContent/*
 Plugins/Portal/Content/VFX/*
+
+#Map
+Content/__ExternalActors__/*
+Content/__ExternalObjects__/*
