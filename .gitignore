@@ -93,8 +93,9 @@ Plugins/MonsterPlugin/Content/MSPresets/*
 Plugins/MonsterPlugin/Content/ThirdPerson/*
 Plugins/Portal/Content/StarterContent/*
 Plugins/Portal/Content/VFX/*
-Plugins/MonsterPlugin/Content/VFX/*
-
+Plugins/Breath/Content/VFX/*
+Plugins/HitEffect/Content/VFX/*
+Plugins/MonsterPlugin/Content/MonsterVFX/*
 
 #Map
 Content/__ExternalActors__/*
