@@ -97,6 +97,10 @@ Plugins/Breath/Content/VFX/*
 Plugins/HitEffect/Content/VFX/*
 Plugins/MonsterPlugin/Content/MonsterVFX/*
 
+#Level
+Content/Level/*
+Content/VFX/*
+
 #Map
 Content/__ExternalActors__/*
 Content/__ExternalObjects__/*
