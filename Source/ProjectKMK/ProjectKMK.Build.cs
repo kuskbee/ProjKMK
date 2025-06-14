@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class LFSTest : ModuleRules
+public class ProjectKMK : ModuleRules
 {
-	public LFSTest(ReadOnlyTargetRules Target) : base(Target)
+	public ProjectKMK(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	

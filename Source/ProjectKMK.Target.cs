@@ -3,13 +3,13 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class LFSTestEditorTarget : TargetRules
+public class ProjectKMKTarget : TargetRules
 {
-	public LFSTestEditorTarget(TargetInfo Target) : base(Target)
+	public ProjectKMKTarget(TargetInfo Target) : base(Target)
 	{
-		Type = TargetType.Editor;
+		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 
-		ExtraModuleNames.AddRange( new string[] { "LFSTest" } );
+		ExtraModuleNames.AddRange( new string[] { "ProjectKMK" } );
 	}
 }
