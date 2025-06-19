@@ -9,6 +9,7 @@
 #include "GroomComponent.h"
 #include "EnhancedInputComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "MotionWarpingComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -31,12 +32,15 @@ APlayerCharacter::APlayerCharacter()
 	Eyebrows->SetupAttachment(GetMesh());
 	Eyebrows->AttachmentName = FString("head");
 
+	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
+
 	// * Initialize Default Values
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0, 0, -GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),
 		FRotator(0, -90, 0));
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel2);
 
 	// WeaponTrace
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
@@ -77,6 +81,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		UEIC->BindAction(IA_Look, ETriggerEvent::Triggered, this, &APlayerCharacter::OnLook);
 		UEIC->BindAction(IA_Jump, ETriggerEvent::Started, this, &APlayerCharacter::OnJump);
 		UEIC->BindAction(IA_Jump, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopJump);
+		UEIC->BindAction(IA_NormalAttack, ETriggerEvent::Triggered, this, &APlayerCharacter::OnNormalAttack);
 	}
 
 }
@@ -113,4 +118,105 @@ void APlayerCharacter::OnStopJump(const FInputActionValue& Value)
 {
 	StopJumping();
 }
+
+void APlayerCharacter::OnNormalAttack(const FInputActionValue& Value)
+{
+	bool bIsCanAttack = IsCanAttack();
+	if (bIsCanAttack)
+	{
+		ActiveAttack(false);
+	}
+}
+
+void APlayerCharacter::SetLocomotionState()
+{
+	EchoState = EPlayerState::EPS_Locomotion;
+}
+
+bool APlayerCharacter::IsCanAttack()
+{
+	return IsCanPlayMontage() && !IsHold;
+}
+
+void APlayerCharacter::ActiveAttack(bool bIsDash)
+{
+	if (bIsDash)
+	{
+		//:DASH:
+	}
+	else // Normal
+	{
+		//:DASH:
+		//RemoveSyncPoint
+
+		PlayAttackMontage(false);
+	}
+
+	IncreaseAttackIndex();
+	EchoState = EPlayerState::EPS_Attack;
+}
+
+uint32 APlayerCharacter::IncreaseAttackIndex()
+{
+	AttackIndex = (AttackIndex + 1) % AttackSkillCount;
+	return AttackIndex;
+}
+
+bool APlayerCharacter::IsCanPlayMontage()
+{
+	bool IsPlayingMontage = GetMesh()->GetAnimInstance()->IsAnyMontagePlaying();
+	bool IsLocomotion = EchoState == EPlayerState::EPS_Locomotion;
+	return !IsPlayingMontage && IsLocomotion;
+}
+
+void APlayerCharacter::PlayAttackMontage(bool bIsDash)
+{
+	UnbindEventAttackMontageEnd();
+
+	UAnimMontage* AttackMontage;
+	if (bIsDash)
+	{
+		AttackMontage = DashAttackMontage;
+	}
+	else
+	{
+		AttackMontage = NormalAttackMontage;
+	}
+
+	FName Section = FName(*FString::Printf(TEXT("Attack%d"), AttackIndex));
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage);
+		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
+
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventAttackMontageEnd);
+	}
+}
+
+void APlayerCharacter::UnbindEventAttackMontageEnd()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::EventAttackMontageEnd);
+	}
+}
+
+void APlayerCharacter::EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage != NormalAttackMontage && Montage != DashAttackMontage)
+	{
+		return;
+	}
+
+	//:WEAPON:
+	//SetCollisionEnable NoCollision
+
+	SetLocomotionState();
+	UnbindEventAttackMontageEnd();
+}
+
+
 

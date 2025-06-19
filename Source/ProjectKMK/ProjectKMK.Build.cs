@@ -9,7 +9,9 @@ public class ProjectKMK : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore"
-															, "EnhancedInput", "HairStrandsCore"});
+															, "EnhancedInput", "HairStrandsCore"
+															, "MotionWarping"
+															});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
