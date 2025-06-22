@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "CharacterTypes.h"
+#include "Interfaces/CombatReactInterface.h"
 #include "PlayerCharacter.generated.h"
 
 class UCameraComponent;
@@ -14,9 +15,10 @@ class UInputMappingContext;
 class UInputAction;
 class UGroomComponent;
 class UMotionWarpingComponent;
+class AWeaponBase;
 
 UCLASS()
-class PROJECTKMK_API APlayerCharacter : public ACharacter
+class PROJECTKMK_API APlayerCharacter : public ACharacter, public ICombatReactInterface
 {
 	GENERATED_BODY()
 
@@ -27,6 +29,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// CombatReactInteface Function
+	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
 
 public:	
 	// Called every frame
@@ -50,12 +55,14 @@ protected:
 	bool IsCanAttack();
 	void ActiveAttack(bool bIsDash);
 	uint32 IncreaseAttackIndex();
-	
+
+	// Weapon
+	void SpawnWeapon();
+
 	// Montage
 	bool IsCanPlayMontage();
 	void PlayAttackMontage(bool bIsDash);
 	void UnbindEventAttackMontageEnd();
-
 
 
 	UFUNCTION()
@@ -115,5 +122,11 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Montage", BlueprintReadOnly)
 	int DeathIndex;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<AWeaponBase> WeaponClass;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Combat", BlueprintReadOnly)
+	TObjectPtr<AWeaponBase> EquippedWeapon;
 
 };

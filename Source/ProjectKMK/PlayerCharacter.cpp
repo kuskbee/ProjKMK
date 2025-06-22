@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MotionWarpingComponent.h"
+#include "Weapon/WeaponBase.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -60,6 +61,12 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	SpawnWeapon();
+}
+
+bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)
+{
+	return false;
 }
 
 // Called every frame
@@ -160,6 +167,32 @@ uint32 APlayerCharacter::IncreaseAttackIndex()
 {
 	AttackIndex = (AttackIndex + 1) % AttackSkillCount;
 	return AttackIndex;
+}
+
+void APlayerCharacter::SpawnWeapon()
+{
+	if (WeaponClass)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = this;
+
+		EquippedWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, SpawnParams);
+
+		if (EquippedWeapon)
+		{
+			EquippedWeapon->AttachToComponent(
+				GetMesh(),
+				FAttachmentTransformRules(
+					EAttachmentRule::SnapToTarget,    // Location
+					EAttachmentRule::SnapToTarget,    // Rotation
+					EAttachmentRule::KeepRelative,     // Scale
+					true
+				),
+				FName(TEXT("weapon"))
+			);
+		}
+	}
 }
 
 bool APlayerCharacter::IsCanPlayMontage()
