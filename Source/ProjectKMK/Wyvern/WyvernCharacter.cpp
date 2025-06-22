@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "WyvernCharacter.h"
@@ -7,6 +7,10 @@
 #include "Camera/CameraComponent.h"
 #include "MotionWarpingComponent.h"
 #include "MonStateComponent.h"
+#include "Animation/AnimMontage.h"
+#include "Kismet/GameplayStatics.h"
+#include "MyLegacyCameraShake.h"
+#include "NiagaraFunctionLibrary.h"
 
 // Sets default values
 AWyvernCharacter::AWyvernCharacter()
@@ -60,3 +64,110 @@ void AWyvernCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 }
 
+bool AWyvernCharacter::Attack()
+{
+	switch (Phase)
+	{
+	case EPhase::FirstPhase:
+		BattleTickOnFirstPhase();
+		break;
+	case EPhase::SecondPhase:
+		BattleTickOnSecondPhase();
+		break;
+	case EPhase::ThirdPhase:
+		BattleTickOnThirdPhase();
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+bool AWyvernCharacter::SetAIState(EAIState AIState)
+{
+	MonAIState = AIState;
+
+	return false;
+}
+
+bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
+{
+	if (MonAIState != EAIState::Dead && MonAIState != EAIState::Runaway && MonAIState != EAIState::RunawayReady)
+	{
+		if (FMath::FRandRange(0.0f, 1.0f) <= 0.7f)
+		{
+			float RandomKnockbackPower = FMath::FRandRange(300.0f, 600.0f);
+
+			MotionWarping->AddOrUpdateWarpTargetFromLocation(
+				FName("MonsterKnockbackMove"),
+				GetActorLocation() + ((GetActorLocation() - HitterActor->GetActorLocation()).Normalize(0.0001)
+					* RandomKnockbackPower));
+		}
+		else
+		{
+			MotionWarping->RemoveAllWarpTargets();
+		}
+
+		if (HitMontage)
+		{
+			PlayAnimMontage(HitMontage);
+		}
+		UGameplayStatics::PlayWorldCameraShake(
+			GetWorld(),
+			UMyLegacyCameraShake::StaticClass(),
+			GetActorLocation(),
+			0.0f,
+			3500.0f,
+			1.0f
+		);
+		if (IsWeakAttack(HitResult.BoneName))
+		{
+			//UNiagaraFunctionLibrary::SpawnSystemAtLocation(HitResult.ImpactPoint) 
+			// 스폰할 나이아가라 시스템 리소스는 유틸리티로 찾게 두면 안되기 때문에 멤버 변수로 슬롯을 만들어
+			// 블루프린트에서 찾아 넣을 수 있도록 할건데 
+			// 오늘은 여기까지
+		}
+		else
+		{
+
+		}
+
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void AWyvernCharacter::BattleTickOnFirstPhase()
+{
+}
+
+void AWyvernCharacter::BattleTickOnSecondPhase()
+{
+}
+
+void AWyvernCharacter::BattleTickOnThirdPhase()
+{
+}
+
+bool AWyvernCharacter::IsWeakAttack(FName BoneName)
+{
+	if (Phase == EPhase::FirstPhase)
+	{
+		return BoneName.Compare(GetMesh()->GetSocketBoneName("Bip001_Head")) == 0;
+	}
+	else if (Phase == EPhase::SecondPhase)
+	{
+		return (BoneName.Compare(GetMesh()->GetSocketBoneName("BN_Wynern_Tail_1")) == 0) ||
+			(BoneName.Compare(GetMesh()->GetSocketBoneName("BN_Wynern_Tail_5")) == 0);
+	}
+	else if (Phase == EPhase::ThirdPhase)
+	{
+		return false;
+	}
+	return false;
+}

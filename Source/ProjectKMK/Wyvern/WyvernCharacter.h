@@ -4,15 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "WyvernInterface.h"
+#include "MyCombatReactInterface.h"
+#include "MyMonState.h"
+#include "MyMonAIController.h"
+#include "MySurface.h"
 #include "WyvernCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UMotionWarpingComponent;
 class UMonStateComponent;
+class UAnimMontage;
 
 UCLASS()
-class PROJECTKMK_API AWyvernCharacter : public ACharacter
+class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public IMyCombatReactInterface
 {
 	GENERATED_BODY()
 
@@ -42,5 +48,41 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
 	TObjectPtr<UMonStateComponent> MonStateComponent;
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool Attack() override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool SetAIState(EAIState AIState) override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool ApplyHit(FHitResult HitResult, AActor* HitterActor) override;
+
+	void BattleTickOnFirstPhase();
+	void BattleTickOnSecondPhase();
+	void BattleTickOnThirdPhase();
+	bool IsWeakAttack(FName BoneName);
+
+	bool IsPlayMontage;
+	EAIState MonAIState;
+	float CurHP;
+	float MaxHP;
+	EPhase Phase;
+	float Damage;
+
+	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
+	TObjectPtr<UAnimMontage> HowlingMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
+	TObjectPtr<UAnimMontage> RevivalMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
+	TObjectPtr<UAnimMontage> AttackMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
+	TObjectPtr<UAnimMontage> HitMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
+	TObjectPtr<AMySurface> TailSurface;
 
 };
