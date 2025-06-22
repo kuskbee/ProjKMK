@@ -25,11 +25,11 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void SetWeaponCollisionEnable(bool IsEnable);
 protected:
 	void ClearIgnoreActors();
 	bool HasSameTag(AActor* TargetActor);
 	bool DoBoxTrace(AActor* TargetActor, FHitResult& OutHit);
-	void SetWeaponCollisionEnable(bool IsEnable);
 	bool HasSameMonsterTag(AActor* TargetActor);
 
 	UFUNCTION()

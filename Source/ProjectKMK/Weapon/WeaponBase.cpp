@@ -19,20 +19,23 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh->SetupAttachment(RootComponent);
 
 	WeaponBox = CreateDefaultSubobject<UBoxComponent>(TEXT("WeaponBox"));
-	WeaponBox->SetupAttachment(RootComponent);
+	WeaponBox->SetupAttachment(WeaponMesh);
 
 	BoxTraceStart = CreateDefaultSubobject<USceneComponent>(TEXT("BoxTraceStart"));
-	BoxTraceStart->SetupAttachment(RootComponent);
+	BoxTraceStart->SetupAttachment(WeaponMesh);
 
 	BoxTraceEnd = CreateDefaultSubobject<USceneComponent>(TEXT("BoxTraceEnd"));
-	BoxTraceEnd->SetupAttachment(RootComponent);
+	BoxTraceEnd->SetupAttachment(WeaponMesh);
 
 	// * Initialize Default Values
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel2, ECollisionResponse::ECR_Block);
 
+	WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponBox->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
 	WeaponBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	WeaponBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	WeaponBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
@@ -43,10 +46,6 @@ AWeaponBase::AWeaponBase()
 
 	BoxTraceStart->SetRelativeLocation(FVector(0.f, 0.f, 10.f));
 	BoxTraceEnd->SetRelativeLocation(FVector(0.f, 0.f, 86.f));
-
-
-
-	
 }
 
 // Called when the game starts or when spawned
@@ -65,6 +64,19 @@ void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AWeaponBase::SetWeaponCollisionEnable(bool IsEnable)
+{
+	if (IsEnable)
+	{
+		WeaponBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
+	else
+	{
+		WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ClearIgnoreActors();
+	}
 }
 
 void AWeaponBase::ClearIgnoreActors()
@@ -122,19 +134,6 @@ bool AWeaponBase::DoBoxTrace(AActor* TargetActor, FHitResult& OutHit)
 
 
 	return bHit;
-}
-
-void AWeaponBase::SetWeaponCollisionEnable(bool IsEnable)
-{
-	if (IsEnable)
-	{
-		WeaponBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	}
-	else
-	{
-		WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		ClearIgnoreActors();
-	}
 }
 
 bool AWeaponBase::HasSameMonsterTag(AActor* TargetActor)
