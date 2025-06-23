@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "MotionWarpingComponent.h"
 #include "MonStateComponent.h"
+#include "Define.h"
 #include "Animation/AnimMontage.h"
 #include "Kismet/GameplayStatics.h"
 #include "MyLegacyCameraShake.h"

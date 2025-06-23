@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyMonAIController.h"
+#include "Define.h"
 #include "WyvernInterface.generated.h"
 /**
  * 

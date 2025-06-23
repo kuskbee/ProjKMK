@@ -3,20 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
+#include "Define.h"
 #include "Engine/DataTable.h"
 #include "MyMonState.generated.h"
 /**
  * 
  */
-
-UENUM(BlueprintType)
-enum class EPhase : uint8
-{
-	FirstPhase = 0 UMETA(DisplayName = "FirstPhase"),
-	SecondPhase = 1 UMETA(DisplayName = "SecondPhase"),
-	ThirdPhase = 2 UMETA(DisplayName = "ThirdPhase")
-};
 
 USTRUCT(BlueprintType)
 struct FMyMonState : public FTableRowBase

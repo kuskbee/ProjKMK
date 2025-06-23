@@ -6,8 +6,7 @@
 #include "GameFramework/Character.h"
 #include "WyvernInterface.h"
 #include "MyCombatReactInterface.h"
-#include "MyMonState.h"
-#include "MyMonAIController.h"
+#include "Define.h"
 #include "MySurface.h"
 #include "WyvernCharacter.generated.h"
 
