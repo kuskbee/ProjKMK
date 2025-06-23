@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "CharacterTypes.h"
+#include "Interfaces/CombatReactInterface.h"
 #include "PlayerCharacter.generated.h"
 
 class UCameraComponent;
@@ -14,9 +15,12 @@ class UInputMappingContext;
 class UInputAction;
 class UGroomComponent;
 class UMotionWarpingComponent;
+class AWeaponBase;
+class ULegacyCameraShake;
+class UNiagaraSystem;
 
 UCLASS()
-class PROJECTKMK_API APlayerCharacter : public ACharacter
+class PROJECTKMK_API APlayerCharacter : public ACharacter, public ICombatReactInterface
 {
 	GENERATED_BODY()
 
@@ -27,6 +31,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// CombatReactInteface Function
+	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
 
 public:	
 	// Called every frame
@@ -50,16 +57,36 @@ protected:
 	bool IsCanAttack();
 	void ActiveAttack(bool bIsDash);
 	uint32 IncreaseAttackIndex();
-	
+	FString GetSectionNameFromHitDirection(FVector HitterLocation);
+	float GetDegreeFromLocation(FVector Location);
+
+	// Dash
+	void RemoveSyncPoint();
+
+	// Knockback
+	void SetKnockbackDirection(FVector KnockbackDirection);
+
+	// Weapon
+	void SpawnWeapon();
+
+	// Effect
+	void SpawnHitReactEffect(FVector Location);
+
 	// Montage
 	bool IsCanPlayMontage();
 	void PlayAttackMontage(bool bIsDash);
 	void UnbindEventAttackMontageEnd();
-
+	void PlayHitReactMontage(FString SectionName);
+	void UnbindEventHitReactMontageEnd();
 
 
 	UFUNCTION()
 	void EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
+
+
+	UFUNCTION()
+	void EventHitReactMontageEnd(UAnimMontage* Montage, bool bInterrupted);
+
 
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
@@ -113,7 +140,28 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> DashAttackMontage;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> HitReactMontage;
+
 	UPROPERTY(VisibleAnywhere, Category = "Montage", BlueprintReadOnly)
 	int DeathIndex;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<AWeaponBase> WeaponClass;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Combat", BlueprintReadOnly)
+	TObjectPtr<AWeaponBase> EquippedWeapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<UCameraShakeBase> AttackCameraShake;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TObjectPtr<UNiagaraSystem> HitReactEffect;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Knockback")
+	float KnockbackChance = 0.7f;
+
+public:
+	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }
 
 };

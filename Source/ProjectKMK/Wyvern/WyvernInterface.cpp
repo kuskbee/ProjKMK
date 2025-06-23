@@ -1,0 +1,14 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "WyvernInterface.h"
+
+bool IWyvernInterface::Attack()
+{
+	return false;
+}
+
+bool IWyvernInterface::SetAIState(EAIState AIState)
+{
+	return false;
+}

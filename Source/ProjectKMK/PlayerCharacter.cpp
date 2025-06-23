@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "PlayerCharacter.h"
@@ -9,7 +9,11 @@
 #include "GroomComponent.h"
 #include "EnhancedInputComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "MotionWarpingComponent.h"
+#include "Weapon/WeaponBase.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -60,6 +64,56 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	SpawnWeapon();
+}
+
+bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)
+{
+	if (EchoState == EPlayerState::EPS_Dead)
+	{
+		return false;
+	}
+
+	if (!IsValid(HitterActor))
+	{
+		return false;
+	}
+
+	FVector ImpactPoint = HitResult.ImpactPoint;
+	
+	// Knockback 될 지 결정 (멀티로 옮기면 서버에서 해야)
+	float Chance = FMath::RandRange(0.f, 1.f);
+	bool bIsKnockback = false;
+	if (Chance <= KnockbackChance)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("<Knockback HitRact>"));
+		bIsKnockback = true;
+
+		FVector KnockbackDirection = ImpactPoint - HitterActor->GetActorLocation();
+		KnockbackDirection.Normalize();
+		SetKnockbackDirection(KnockbackDirection);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("<Normal HitRact>"));
+		RemoveSyncPoint();
+	}
+
+	// HitReact Animation 처리
+	FVector HitterLocation = HitterActor->GetActorLocation();
+	FString SectionName = GetSectionNameFromHitDirection(HitterLocation);
+	PlayHitReactMontage(SectionName);
+	
+	if (AttackCameraShake)
+	{
+		UGameplayStatics::PlayWorldCameraShake(GetWorld(), AttackCameraShake,
+			GetActorLocation(), 0.f, 3400.f);
+	}
+
+	// 피격위치로부터 파티클 생성
+	SpawnHitReactEffect(ImpactPoint);
+
+	return true;
 }
 
 // Called every frame
@@ -147,7 +201,7 @@ void APlayerCharacter::ActiveAttack(bool bIsDash)
 	else // Normal
 	{
 		//:DASH:
-		//RemoveSyncPoint
+		RemoveSyncPoint();
 
 		PlayAttackMontage(false);
 	}
@@ -160,6 +214,99 @@ uint32 APlayerCharacter::IncreaseAttackIndex()
 {
 	AttackIndex = (AttackIndex + 1) % AttackSkillCount;
 	return AttackIndex;
+}
+
+FString APlayerCharacter::GetSectionNameFromHitDirection(FVector HitterLocation)
+{
+	// 때린 캐릭터로부터 각도 계산
+	float ThetaDegree = GetDegreeFromLocation(HitterLocation);
+
+	if (ThetaDegree >= -45.f && ThetaDegree < 45.f)
+	{
+		return FString(TEXT("Front"));
+	}
+	if (ThetaDegree >= 45.f && ThetaDegree < 135.f)
+	{
+		return FString(TEXT("Left"));
+	}
+	if (ThetaDegree >= 135.f || ThetaDegree <= -135.f)
+	{
+		return FString(TEXT("Back"));
+	}
+
+	return FString(TEXT("Right"));
+}
+
+float APlayerCharacter::GetDegreeFromLocation(FVector Location)
+{
+	FVector ImpactLowered = FVector(Location.X, Location.Y, GetActorLocation().Z);
+	FVector ToHit = ImpactLowered - GetActorLocation();
+	ToHit.Normalize();
+
+	FVector ForwardVector = GetActorForwardVector();
+	bool RightSide = ToHit.Cross(ForwardVector).Z < 0.f;
+	float Theta = FMath::Acos(ToHit.Dot(ForwardVector));
+	float Degree = FMath::RadiansToDegrees(Theta);
+
+	if (RightSide)
+	{
+		Degree *= -1.f;
+	}
+
+	return Degree;
+}
+
+void APlayerCharacter::RemoveSyncPoint()
+{
+	MotionWarping->RemoveAllWarpTargets();
+}
+
+void APlayerCharacter::SetKnockbackDirection(FVector KnockbackDirection)
+{
+	float RandomKnockbackPower = FMath::RandRange(350.f, 600.f);
+
+	FVector TargetLocation = GetActorLocation() + KnockbackDirection * RandomKnockbackPower;
+
+	MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("EchoHitReactTranslate"), TargetLocation);
+
+	UE_LOG(LogTemp, Warning, TEXT("Knockback power : %f"), RandomKnockbackPower);
+}
+
+void APlayerCharacter::SpawnWeapon()
+{
+	if (WeaponClass)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = this;
+
+		FTransform SpawnTransform = GetMesh()->GetSocketTransform(FName(TEXT("weapon")), RTS_World);
+		EquippedWeapon = GetWorld()->SpawnActorDeferred<AWeaponBase>(
+			WeaponClass,
+			SpawnTransform,
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn	
+		);
+
+		if (EquippedWeapon)
+		{
+			EquippedWeapon->OwnerCharacter = this;
+			EquippedWeapon->AttachToComponent(
+				GetMesh(),
+				FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
+				FName(TEXT("weapon"))
+			);
+			UGameplayStatics::FinishSpawningActor(EquippedWeapon, SpawnTransform);
+		}
+	}
+}
+
+void APlayerCharacter::SpawnHitReactEffect(FVector Location)
+{
+	if (HitReactEffect) {
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, HitReactEffect, Location);
+	}
 }
 
 bool APlayerCharacter::IsCanPlayMontage()
@@ -204,6 +351,29 @@ void APlayerCharacter::UnbindEventAttackMontageEnd()
 	}
 }
 
+void APlayerCharacter::PlayHitReactMontage(FString SectionName)
+{
+	UnbindEventHitReactMontageEnd();
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		AnimInstance->Montage_JumpToSection(FName(SectionName), HitReactMontage);
+
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventHitReactMontageEnd);
+	}
+}
+
+void APlayerCharacter::UnbindEventHitReactMontageEnd()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::EventHitReactMontageEnd);
+	}
+}
+
 void APlayerCharacter::EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage != NormalAttackMontage && Montage != DashAttackMontage)
@@ -211,11 +381,21 @@ void APlayerCharacter::EventAttackMontageEnd(UAnimMontage* Montage, bool bInterr
 		return;
 	}
 
-	//:WEAPON:
-	//SetCollisionEnable NoCollision
-
+	EquippedWeapon->SetWeaponCollisionEnable(false);
+	
 	SetLocomotionState();
 	UnbindEventAttackMontageEnd();
+}
+
+void APlayerCharacter::EventHitReactMontageEnd(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage != HitReactMontage)
+	{
+		return;
+	}
+
+	SetLocomotionState();
+	UnbindEventHitReactMontageEnd();
 }
 
 
