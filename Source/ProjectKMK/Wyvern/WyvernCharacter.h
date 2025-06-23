@@ -4,20 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "WyvernInterface.h"
+#include "MyWyvernInterface.h"
 #include "MyCombatReactInterface.h"
-#include "Define.h"
+#include "MyDefine.h"
 #include "MySurface.h"
 #include "WyvernCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UMotionWarpingComponent;
-class UMonStateComponent;
+class UMyMonStateComponent;
 class UAnimMontage;
 
 UCLASS()
-class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public IMyCombatReactInterface
+class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IMyWyvernInterface, public IMyCombatReactInterface
 {
 	GENERATED_BODY()
 
@@ -46,7 +46,7 @@ public:
 	TObjectPtr<UMotionWarpingComponent> MotionWarping;
 
 	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
-	TObjectPtr<UMonStateComponent> MonStateComponent;
+	TObjectPtr<UMyMonStateComponent> MonStateComponent;
 
 	UFUNCTION(BlueprintCallable)
 	virtual bool Attack() override;

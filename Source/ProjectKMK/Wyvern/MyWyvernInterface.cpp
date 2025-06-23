@@ -1,14 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "WyvernInterface.h"
+#include "MyWyvernInterface.h"
 
-bool IWyvernInterface::Attack()
+bool IMyWyvernInterface::Attack()
 {
 	return false;
 }
 
-bool IWyvernInterface::SetAIState(EAIState AIState)
+bool IMyWyvernInterface::SetAIState(EAIState AIState)
 {
 	return false;
 }

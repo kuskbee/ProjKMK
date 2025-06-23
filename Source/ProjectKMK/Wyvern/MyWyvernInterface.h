@@ -3,19 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Define.h"
-#include "WyvernInterface.generated.h"
+#include "MyDefine.h"
+#include "MyWyvernInterface.generated.h"
 /**
  * 
  */
 
 UINTERFACE(Blueprintable, meta = (CannotImplementInterfaceInBlueprint))
-class PROJECTKMK_API UWyvernInterface : public UInterface
+class PROJECTKMK_API UMyWyvernInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class IWyvernInterface
+class IMyWyvernInterface
 {
 	GENERATED_BODY()
 public:

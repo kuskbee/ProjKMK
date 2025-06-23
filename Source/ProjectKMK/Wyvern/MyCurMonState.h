@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "MyMonState.h"
-#include "Define.h"
+#include "MyDefine.h"
 #include "MyCurMonState.generated.h"
 /**
  * 

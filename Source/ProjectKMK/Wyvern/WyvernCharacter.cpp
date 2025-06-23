@@ -6,8 +6,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "MotionWarpingComponent.h"
-#include "MonStateComponent.h"
-#include "Define.h"
+#include "MyMonStateComponent.h"
+#include "MyDefine.h"
 #include "Animation/AnimMontage.h"
 #include "Kismet/GameplayStatics.h"
 #include "MyLegacyCameraShake.h"
@@ -41,7 +41,7 @@ AWyvernCharacter::AWyvernCharacter()
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
 
-	MonStateComponent = CreateDefaultSubobject<UMonStateComponent>(TEXT("MonStateComponent"));
+	MonStateComponent = CreateDefaultSubobject<UMyMonStateComponent>(TEXT("MonStateComponent"));
 }
 
 // Called when the game starts or when spawned
