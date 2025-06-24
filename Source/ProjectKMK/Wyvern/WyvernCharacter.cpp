@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MyLegacyCameraShake.h"
 #include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 
 // Sets default values
 AWyvernCharacter::AWyvernCharacter()
@@ -110,10 +111,11 @@ bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
 			MotionWarping->RemoveAllWarpTargets();
 		}
 
-		if (HitMontage)
+		if (KnockBackMontage)
 		{
-			PlayAnimMontage(HitMontage);
+			PlayAnimMontage(KnockBackMontage);
 		}
+
 		UGameplayStatics::PlayWorldCameraShake(
 			GetWorld(),
 			UMyLegacyCameraShake::StaticClass(),
@@ -122,18 +124,15 @@ bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
 			3500.0f,
 			1.0f
 		);
+
 		if (IsWeakAttack(HitResult.BoneName))
 		{
-			//UNiagaraFunctionLibrary::SpawnSystemAtLocation(HitResult.ImpactPoint) 
-			// 스폰할 나이아가라 시스템 리소스는 유틸리티로 찾게 두면 안되기 때문에 멤버 변수로 슬롯을 만들어
-			// 블루프린트에서 찾아 넣을 수 있도록 할건데 
-			// 오늘은 여기까지
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeakAttackEffect, HitResult.ImpactPoint); 
 		}
 		else
 		{
-
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NotWeakAttackEffect, HitResult.ImpactPoint);
 		}
-
 
 		return true;
 	}
@@ -145,14 +144,20 @@ bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
 
 void AWyvernCharacter::BattleTickOnFirstPhase()
 {
+	if (!IsPlayMontage)
+	{
+
+	}
 }
 
 void AWyvernCharacter::BattleTickOnSecondPhase()
 {
+
 }
 
 void AWyvernCharacter::BattleTickOnThirdPhase()
 {
+
 }
 
 bool AWyvernCharacter::IsWeakAttack(FName BoneName)

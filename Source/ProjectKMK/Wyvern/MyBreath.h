@@ -4,18 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MySurface.generated.h"
+#include "MyBreath.generated.h"
 
-class UStaticMeshComponent;
+class UParticleSystemComponent;
+class USphereComponent;
 
 UCLASS()
-class PROJECTKMK_API AMySurface : public AActor
+class PROJECTKMK_API AMyBreath : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AMySurface();
+	AMyBreath();
 
 protected:
 	// Called when the game starts or when spawned
@@ -26,7 +27,17 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
-	TObjectPtr<UStaticMeshComponent> Tail;
+	TObjectPtr<UParticleSystemComponent> Particle;
 
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
+	TObjectPtr<USphereComponent> End;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
+	TObjectPtr<USphereComponent> Start;
+
+	float Damage;
+
+	UFUNCTION(BlueprintCallable)
+	void BreathDamage();
 
 };

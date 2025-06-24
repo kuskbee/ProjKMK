@@ -16,15 +16,7 @@ struct FMyMonState : public FTableRowBase
 	GENERATED_BODY()
 
 public:
-	FMyMonState()
-	{
-		Name = "",
-		MaxHP = 10000.0f;
-		WeaknessHP = 2000.0f;
-		Phase = EPhase::FirstPhase;
-	}
-
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "Name"), BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "Name", MakeStructureDefaultValue = "None"), BlueprintReadWrite)
 	FString Name;
 
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "MaxHP", MakeStructureDefaultValue = "10000.000000"), BlueprintReadWrite)

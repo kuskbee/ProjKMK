@@ -15,6 +15,7 @@ class UCameraComponent;
 class UMotionWarpingComponent;
 class UMonStateComponent;
 class UAnimMontage;
+class UNiagaraSystem;
 
 UCLASS()
 class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public IMyCombatReactInterface
@@ -42,10 +43,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
 	TObjectPtr<UCameraComponent> Camera;
 
-	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UMotionWarpingComponent> MotionWarping;
 
-	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UMonStateComponent> MonStateComponent;
 
 	UFUNCTION(BlueprintCallable)
@@ -79,9 +80,14 @@ public:
 	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
-	TObjectPtr<UAnimMontage> HitMontage;
+	TObjectPtr<UAnimMontage> KnockBackMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<AMySurface> TailSurface;
 
+	UPROPERTY(EditAnywhere, Category = "Effects", BlueprintReadWrite)
+	TObjectPtr<UNiagaraSystem> WeakAttackEffect;
+
+	UPROPERTY(EditAnywhere, Category = "Effects", BlueprintReadWrite)
+	TObjectPtr<UNiagaraSystem> NotWeakAttackEffect;
 };
