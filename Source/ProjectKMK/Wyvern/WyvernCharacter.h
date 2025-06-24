@@ -10,12 +10,15 @@
 #include "MySurface.h"
 #include "WyvernCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEventDispatcherAttackEnd);
+
 class USpringArmComponent;
 class UCameraComponent;
 class UMotionWarpingComponent;
 class UMonStateComponent;
 class UAnimMontage;
 class UNiagaraSystem;
+
 
 UCLASS()
 class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public IMyCombatReactInterface
@@ -49,6 +52,15 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UMonStateComponent> MonStateComponent;
 
+	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
+	TObjectPtr<UDataTable> FirstPhaseTable;
+
+	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
+	TObjectPtr<UDataTable> SecondPhaseTable;
+
+	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
+	TObjectPtr<UDataTable> ThirdPhaseTable;
+
 	UFUNCTION(BlueprintCallable)
 	virtual bool Attack() override;
 
@@ -58,9 +70,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual bool ApplyHit(FHitResult HitResult, AActor* HitterActor) override;
 
+	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
+	FEventDispatcherAttackEnd EventAttackEnd;
+
+	void EventMontageEnd(UAnimMontage* Montage, bool bINterrupted);
 	void BattleTickOnFirstPhase();
 	void BattleTickOnSecondPhase();
 	void BattleTickOnThirdPhase();
+
 	bool IsWeakAttack(FName BoneName);
 
 	bool IsPlayMontage;
@@ -90,4 +107,5 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Effects", BlueprintReadWrite)
 	TObjectPtr<UNiagaraSystem> NotWeakAttackEffect;
+
 };

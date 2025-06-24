@@ -142,22 +142,97 @@ bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
 	}
 }
 
+void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
+{
+	IsPlayMontage = false;
+	if (Montage == AttackMontage)
+	{
+		EventAttackEnd.Broadcast();
+	}
+}
+
 void AWyvernCharacter::BattleTickOnFirstPhase()
 {
 	if (!IsPlayMontage)
 	{
+		if (IsValid(FirstPhaseTable))
+		{
+			TArray<FName> Names = FirstPhaseTable->GetRowNames();
+			FName RandName = Names[rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
+			FMonsterSkill* Skill = FirstPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
 
+			if (IsValid(Skill->AnimMontage))
+			{
+				AttackMontage = Skill->AnimMontage;
+				PlayAnimMontage(AttackMontage, 1.2f);
+
+				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
+				{
+					IsPlayMontage = true;
+				}
+				else
+				{
+					EventMontageEnd(AttackMontage, false);
+				}
+			}
+		}
 	}
 }
 
 void AWyvernCharacter::BattleTickOnSecondPhase()
 {
+	if (!IsPlayMontage)
+	{
+		if (IsValid(SecondPhaseTable))
+		{
+			TArray<FName> Names = SecondPhaseTable->GetRowNames();
+			FName RandName = Names[rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
+			FMonsterSkill* Skill = SecondPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
 
+			if (IsValid(Skill->AnimMontage))
+			{
+				AttackMontage = Skill->AnimMontage;
+				PlayAnimMontage(AttackMontage, 1.2f);
+
+				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
+				{
+					IsPlayMontage = true;
+				}
+				else
+				{
+					EventMontageEnd(AttackMontage, false);
+				}
+			}
+		}
+	}
 }
 
 void AWyvernCharacter::BattleTickOnThirdPhase()
 {
+	if (!IsPlayMontage)
+	{
+		if (IsValid(ThirdPhaseTable))
+		{
+			TArray<FName> Names = ThirdPhaseTable->GetRowNames();
+			FName RandName = Names[rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
+			FMonsterSkill* Skill = ThirdPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
 
+			if (IsValid(Skill->AnimMontage))
+			{
+				AttackMontage = Skill->AnimMontage;
+				PlayAnimMontage(AttackMontage, 1.2f);
+
+				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
+				{
+					IsPlayMontage = true;
+				}
+				else
+				{
+					EventMontageEnd(AttackMontage, false);
+				}
+			}
+		}
+	}
 }
 
 bool AWyvernCharacter::IsWeakAttack(FName BoneName)

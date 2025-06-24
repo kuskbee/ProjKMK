@@ -47,7 +47,7 @@ public:
 	FEventDispatcher_Death EventDispatcherDeath;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
-	UDataTable* MonStateDataTable;
+	TObjectPtr<UDataTable> MonStateDataTable;
 
 	UFUNCTION(BlueprintCallable)
 	void AddDamage(float Damage, FName BoneName, EPhase MonsterPhase);
