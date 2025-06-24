@@ -14,6 +14,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "MotionWarpingComponent.h"
 #include "Weapon/WeaponBase.h"
+#include "StatusComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -35,6 +36,8 @@ APlayerCharacter::APlayerCharacter()
 	Eyebrows = CreateDefaultSubobject<UGroomComponent>(TEXT("Eyebrows"));
 	Eyebrows->SetupAttachment(GetMesh());
 	Eyebrows->AttachmentName = FString("head");
+
+	StatusComponent = CreateDefaultSubobject<UStatusComponent>(TEXT("StatusComponent"));
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
 
@@ -63,8 +66,11 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	SpawnWeapon();
+	BindEventStatusComponent();
+
+	//:TARGET-SYSTEM:
 }
 
 bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)
@@ -140,8 +146,41 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 }
 
+float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[%s] Damaged!! Amount : %f"), *this->GetName(), DamageAmount);
+
+	StatusComponent->TakeDamage(DamageAmount);
+
+	return 0.0f;
+}
+
+void APlayerCharacter::BindEventStatusComponent()
+{
+	StatusComponent->OnDead.AddDynamic(this, &APlayerCharacter::DoDeath);
+}
+
+void APlayerCharacter::DoDeath()
+{
+	EchoState = EPlayerState::EPS_Dead;
+
+	if (!DeathMontage)
+	{
+		return;
+	}
+
+	DeathIndex = FMath::RandRange(0, DeathMontage->GetNumSections() - 1);
+	FName SectionName = DeathMontage->GetSectionName(DeathIndex);
+	PlayDeathMontage(SectionName);
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
 void APlayerCharacter::OnMove(const FInputActionValue& Value)
 {
+	if (!IsMovable()) return;
+
 	FVector2D DirectionVector = Value.Get<FVector2D>();
 
 	FRotator CameraRotation = GetControlRotation();
@@ -165,11 +204,13 @@ void APlayerCharacter::OnLook(const FInputActionValue& Value)
 
 void APlayerCharacter::OnJump(const FInputActionValue& Value)
 {
+	if (!IsMovable()) return;
 	Jump();
 }
 
 void APlayerCharacter::OnStopJump(const FInputActionValue& Value)
 {
+	if (!IsMovable()) return;
 	StopJumping();
 }
 
@@ -180,6 +221,25 @@ void APlayerCharacter::OnNormalAttack(const FInputActionValue& Value)
 	{
 		ActiveAttack(false);
 	}
+}
+
+bool APlayerCharacter::IsMovable()
+{
+	bool bIsMovable = false;
+	switch (EchoState)
+	{
+	case EPlayerState::EPS_Locomotion:
+		bIsMovable = true;
+		break;
+	case EPlayerState::EPS_Attack:
+	case EPlayerState::EPS_Dodge:
+	case EPlayerState::EPS_HitReact:
+	case EPlayerState::EPS_Dead:
+		bIsMovable = false;
+		break;
+	}
+
+	return bIsMovable;
 }
 
 void APlayerCharacter::SetLocomotionState()
@@ -371,6 +431,16 @@ void APlayerCharacter::UnbindEventHitReactMontageEnd()
 	if (AnimInstance)
 	{
 		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::EventHitReactMontageEnd);
+	}
+}
+
+void APlayerCharacter::PlayDeathMontage(FName SectionName)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, DeathMontage);
 	}
 }
 

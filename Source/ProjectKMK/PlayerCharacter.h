@@ -18,6 +18,7 @@ class UMotionWarpingComponent;
 class AWeaponBase;
 class ULegacyCameraShake;
 class UNiagaraSystem;
+class UStatusComponent;
 
 UCLASS()
 class PROJECTKMK_API APlayerCharacter : public ACharacter, public ICombatReactInterface
@@ -42,7 +43,15 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser);
+	
 protected:
+
+	// Bind Event
+	void BindEventStatusComponent();
+
+	UFUNCTION()
+	void DoDeath();
 
 	// Input Event Function
 	void OnMove(const FInputActionValue& Value);
@@ -51,6 +60,7 @@ protected:
 	void OnStopJump(const FInputActionValue& Value);
 	void OnNormalAttack(const FInputActionValue& Value);
 		
+	bool IsMovable();
 	void SetLocomotionState();
 
 	// Combat
@@ -78,7 +88,7 @@ protected:
 	void UnbindEventAttackMontageEnd();
 	void PlayHitReactMontage(FString SectionName);
 	void UnbindEventHitReactMontageEnd();
-
+	void PlayDeathMontage(FName SectionName);
 
 	UFUNCTION()
 	void EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
@@ -103,6 +113,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UMotionWarpingComponent> MotionWarping;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
+	TObjectPtr<UStatusComponent> StatusComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> IA_Jump;
@@ -142,6 +155,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> HitReactMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> DeathMontage;
 
 	UPROPERTY(VisibleAnywhere, Category = "Montage", BlueprintReadOnly)
 	int DeathIndex;
