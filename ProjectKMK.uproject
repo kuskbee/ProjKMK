@@ -5,15 +5,9 @@
 	"Description": "",
 	"Modules": [
 		{
-			"Name": "ProjectKMK",
+			"Name": "LFSTest",
 			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"Engine",
-				"CoreUObject",
-				"AIModule",
-				"EngineCameras"
-			]
+			"LoadingPhase": "Default"
 		}
 	],
 	"Plugins": [
