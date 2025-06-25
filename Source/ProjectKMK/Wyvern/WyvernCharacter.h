@@ -73,6 +73,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcherAttackEnd EventAttackEnd;
 
+	void SetMonState(FName RowName);
+	void CutTail(bool IsNotCut);
 	void EventMontageEnd(UAnimMontage* Montage, bool bINterrupted);
 	void BattleTickOnFirstPhase();
 	void BattleTickOnSecondPhase();
@@ -80,11 +82,11 @@ public:
 
 	bool IsWeakAttack(FName BoneName);
 
+	EPhase Phase;
 	bool IsPlayMontage;
 	EAIState MonAIState;
 	float CurHP;
 	float MaxHP;
-	EPhase Phase;
 	float Damage;
 
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
@@ -99,8 +101,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> KnockBackMontage;
 
-	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
-	TObjectPtr<AMySurface> TailSurface;
+	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
+	TSubclassOf<AMySurface> TailSurface;
 
 	UPROPERTY(EditAnywhere, Category = "Effects", BlueprintReadWrite)
 	TObjectPtr<UNiagaraSystem> WeakAttackEffect;

@@ -9,6 +9,7 @@
 #include "MonStateComponent.h"
 #include "Define.h"
 #include "Animation/AnimMontage.h"
+#include "MySurface.h"
 #include "Kismet/GameplayStatics.h"
 #include "MyLegacyCameraShake.h"
 #include "NiagaraFunctionLibrary.h"
@@ -50,6 +51,10 @@ void AWyvernCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPhase"), true);
+	FString EPhaseName = EnumPtr->GetNameStringByValue(static_cast<int64>(Phase));
+
+	SetMonState((FName) EPhaseName);
 }
 
 // Called every frame
@@ -142,6 +147,61 @@ bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
 	}
 }
 
+void AWyvernCharacter::SetMonState(FName RowName)
+{
+	if (IsValid(MonStateComponent))
+	{
+		MonStateComponent->SetMonState(RowName);
+	}
+}
+
+void AWyvernCharacter::CutTail(bool IsNotCut)
+{
+	FTransform Transform = GetMesh()->GetSocketTransform("blindspot");
+
+	if (TailSurface)
+	{
+		AMySurface* Surface = Cast<AMySurface>(GetWorld()->SpawnActor(TailSurface));
+		Surface->AttachToComponent(
+			GetMesh(),
+			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
+			"blindspot"
+		);
+		if (IsNotCut)
+		{
+			FVector TailSpawnPoint = GetMesh()->GetSocketLocation("blindspot");
+			FHitResult OutHit;
+			TArray<AActor*> ActorsToIgnore;
+			ActorsToIgnore.Add(this);
+
+			if (UKismetSystemLibrary::LineTraceSingle(
+				GetWorld(),
+				TailSpawnPoint + FVector(0, 0, 30.0f),
+				TailSpawnPoint + FVector(0, 0, -30.0f),
+				UEngineTypes::ConvertToTraceType(ECC_Visibility),
+				false,
+				ActorsToIgnore,
+				EDrawDebugTrace::None,
+				OutHit,
+				true
+			)){
+				TailSpawnPoint = OutHit.ImpactPoint + FVector(0, 0, 100.0f);
+			}
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = 
+				ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+			FTransform SpawnTransform(FRotator(0.f, 0.f, 0.f), TailSpawnPoint, FVector(1.0f, 1.0f, 1.0f));
+			GetWorld()->SpawnActor<AActor>(
+				TailSurface,
+				SpawnTransform,
+				SpawnParams
+			);
+				
+		}
+	}
+}
+
 void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
 {
 	IsPlayMontage = false;
@@ -158,7 +218,7 @@ void AWyvernCharacter::BattleTickOnFirstPhase()
 		if (IsValid(FirstPhaseTable))
 		{
 			TArray<FName> Names = FirstPhaseTable->GetRowNames();
-			FName RandName = Names[rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
+			FName RandName = Names[FMath::Rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
 			FMonsterSkill* Skill = FirstPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
 
 			if (IsValid(Skill->AnimMontage))
@@ -186,7 +246,7 @@ void AWyvernCharacter::BattleTickOnSecondPhase()
 		if (IsValid(SecondPhaseTable))
 		{
 			TArray<FName> Names = SecondPhaseTable->GetRowNames();
-			FName RandName = Names[rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
+			FName RandName = Names[FMath::Rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
 			FMonsterSkill* Skill = SecondPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
 
 			if (IsValid(Skill->AnimMontage))
@@ -214,7 +274,7 @@ void AWyvernCharacter::BattleTickOnThirdPhase()
 		if (IsValid(ThirdPhaseTable))
 		{
 			TArray<FName> Names = ThirdPhaseTable->GetRowNames();
-			FName RandName = Names[rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
+			FName RandName = Names[FMath::Rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
 			FMonsterSkill* Skill = ThirdPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
 
 			if (IsValid(Skill->AnimMontage))
