@@ -295,6 +295,11 @@ void AWyvernCharacter::BattleTickOnThirdPhase()
 	}
 }
 
+void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
+{
+
+}
+
 bool AWyvernCharacter::IsWeakAttack(FName BoneName)
 {
 	if (Phase == EPhase::FirstPhase)

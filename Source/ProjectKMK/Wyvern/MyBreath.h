@@ -35,6 +35,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<USphereComponent> Start;
 
+	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	float Damage;
 
 	UFUNCTION(BlueprintCallable)

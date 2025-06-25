@@ -19,7 +19,6 @@ class UMonStateComponent;
 class UAnimMontage;
 class UNiagaraSystem;
 
-
 UCLASS()
 class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public IMyCombatReactInterface
 {
@@ -76,10 +75,12 @@ public:
 	void SetMonState(FName RowName);
 	void CutTail(bool IsNotCut);
 	void EventMontageEnd(UAnimMontage* Montage, bool bINterrupted);
+
 	void BattleTickOnFirstPhase();
 	void BattleTickOnSecondPhase();
 	void BattleTickOnThirdPhase();
 
+	void DoAttack(bool IsRightHand, bool IsMouth);
 	bool IsWeakAttack(FName BoneName);
 
 	EPhase Phase;
@@ -109,5 +110,4 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Effects", BlueprintReadWrite)
 	TObjectPtr<UNiagaraSystem> NotWeakAttackEffect;
-
 };

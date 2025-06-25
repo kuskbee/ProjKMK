@@ -6,19 +6,25 @@
 #include "Components/SphereComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
+#include "TimerManager.h"
+
 // Sets default values
 AMyBreath::AMyBreath()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 0"));
+
 	USceneComponent* SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
 
+	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 1"));
 	Particle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleSystem"));
 	Particle->SetupAttachment(SceneRoot);
 	Particle->SetRelativeScale3D(FVector(2.5f, 2.5f, 2.5f));
 
+	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 2"));
 	End = CreateDefaultSubobject<USphereComponent>(TEXT("End"));
 	End->SetupAttachment(Particle);
 	End->SetRelativeLocation(FVector(0, 0, 712.0f));
@@ -26,11 +32,14 @@ AMyBreath::AMyBreath()
 	End->SetRelativeScale3D(FVector(0.4f, 0.4f, 0.4f));
 	End->SetSphereRadius(32.0f);
 
+	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 3"));
 	Start = CreateDefaultSubobject<USphereComponent>(TEXT("Start"));
 	Start->SetupAttachment(Particle);
 	Start->SetRelativeLocation(FVector(0, 0, 56.0f));
 	Start->SetRelativeRotation(FRotator(-90.0f, 180.0f, 180.0f));
 	Start->SetRelativeScale3D(FVector(0.4f, 0.4f, 0.4f));
+
+	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 4"));
 
 }
 
