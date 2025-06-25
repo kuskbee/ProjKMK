@@ -9,6 +9,7 @@
 #include "GroomComponent.h"
 #include "EnhancedInputComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
@@ -102,7 +103,7 @@ bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("<Normal HitRact>"));
-		RemoveSyncPoint();
+		ResetWarpTarget();
 	}
 
 	// HitReact Animation 처리
@@ -142,6 +143,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		UEIC->BindAction(IA_Jump, ETriggerEvent::Started, this, &APlayerCharacter::OnJump);
 		UEIC->BindAction(IA_Jump, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopJump);
 		UEIC->BindAction(IA_NormalAttack, ETriggerEvent::Triggered, this, &APlayerCharacter::OnNormalAttack);
+		UEIC->BindAction(IA_DashAttack, ETriggerEvent::Triggered, this, &APlayerCharacter::OnDashAttack);
 	}
 
 }
@@ -223,6 +225,15 @@ void APlayerCharacter::OnNormalAttack(const FInputActionValue& Value)
 	}
 }
 
+void APlayerCharacter::OnDashAttack(const FInputActionValue& Value)
+{
+	bool bIsCanAttack = IsCanAttack();
+	if (bIsCanAttack)
+	{
+		ActiveAttack(true);
+	}
+}
+
 bool APlayerCharacter::IsMovable()
 {
 	bool bIsMovable = false;
@@ -256,12 +267,18 @@ void APlayerCharacter::ActiveAttack(bool bIsDash)
 {
 	if (bIsDash)
 	{
-		//:DASH:
+		GetAttackTargetActor();
+	}
+
+	if (bIsDash && AttackTarget)
+	{
+		SetWarpTarget();
+
+		PlayAttackMontage(true);
 	}
 	else // Normal
 	{
-		//:DASH:
-		RemoveSyncPoint();
+		ResetWarpTarget();
 
 		PlayAttackMontage(false);
 	}
@@ -316,7 +333,104 @@ float APlayerCharacter::GetDegreeFromLocation(FVector Location)
 	return Degree;
 }
 
-void APlayerCharacter::RemoveSyncPoint()
+void APlayerCharacter::GetAttackTargetActor()
+{
+	// Initialize Dash Variables
+	TargetActors.Empty();
+	TargetScores.Empty();
+	AttackOutHits.Empty();
+	AttackTarget = nullptr;
+
+	//Sphere Trace를 통해 일정거리 내 Target들 검출
+	FVector Location = GetActorLocation();
+	FVector Start = Location + FVector(0.f, 0.f, 100.f);
+	FVector End = Location + FVector(0.f, 0.f, -100.f);
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel2));
+	
+	TArray<TObjectPtr<AActor>> IgnoreActors;
+	IgnoreActors.Add(this);
+
+	bool bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
+		GetWorld(),
+		Start,
+		End,
+		AttackRange,
+		ObjectTypes,
+		false,
+		IgnoreActors,
+		EDrawDebugTrace::ForDuration,
+		AttackOutHits,
+		true
+	);
+
+	if (!bHit)
+	{
+		return;
+	}
+
+	for (FHitResult Hit : AttackOutHits)
+	{
+		TObjectPtr<AActor> HitActor = Hit.GetActor();
+
+		// Check AttackTarget By Degree
+		FVector HitActorLocation = HitActor->GetActorLocation();
+		float Degree = GetDegreeFromLocation(HitActorLocation);
+
+		if (FMath::Abs(Degree) <= AttackAngle)
+		{
+			TargetActors.Add(HitActor);
+
+			float Score = GetTargetScoreByDistance(HitActorLocation);
+			Score -= (PrevAttackTarget == HitActor) ? 100.f : 0.f;
+
+			TargetScores.Add(Score);
+		}
+	}
+
+	// 점수 기반 최종 타겟 선정
+	float MaxScore = 0.f;
+	int MaxIndex;
+	UKismetMathLibrary::MaxOfFloatArray(TargetScores, MaxIndex, MaxScore);
+
+	if (0 <= MaxIndex && MaxIndex < TargetScores.Num())
+	{
+		AttackTarget = TargetActors[MaxIndex];
+		PrevAttackTarget = AttackTarget;
+
+		UE_LOG(LogTemp, Warning, TEXT("Seleted Target : %s"), *AttackTarget->GetName());
+	}
+}
+
+float APlayerCharacter::GetTargetScoreByDistance(FVector Location)
+{
+	//공격범위에 따른 대상과의 거리를 0~100까지의 점수로 반환
+	float Distance = (float)FVector::Dist2D(Location, GetActorLocation());
+
+	float Score = FMath::Clamp(1.f - (Distance / AttackRange), 0.f, 1.f) * 100.f;
+
+	//UE_LOG(LogTemp, Warning, TEXT("CalcScore, Distance[%f], AttackRange[%f]"), Distance, AttackRange);
+	return Score;
+}
+
+void APlayerCharacter::SetWarpTarget()
+{
+	FVector PlayerLoc = GetActorLocation();
+	FVector TargetLoc = AttackTarget->GetActorLocation();
+	float AcceptanceDistance = 100.f;
+
+	FVector MoveTargetVector = PlayerLoc - TargetLoc;
+	MoveTargetVector.Normalize();
+	MoveTargetVector = TargetLoc + MoveTargetVector * AcceptanceDistance;
+
+	FVector RotateTargetVector = TargetLoc;
+	
+	MotionWarping->AddOrUpdateWarpTargetFromLocation(FName(TEXT("TargetMove")), MoveTargetVector);
+	MotionWarping->AddOrUpdateWarpTargetFromLocation(FName(TEXT("TargetRotate")), RotateTargetVector);
+}
+
+void APlayerCharacter::ResetWarpTarget()
 {
 	MotionWarping->RemoveAllWarpTargets();
 }

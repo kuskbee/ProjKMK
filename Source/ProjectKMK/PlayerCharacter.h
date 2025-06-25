@@ -59,6 +59,7 @@ protected:
 	void OnJump(const FInputActionValue& Value);
 	void OnStopJump(const FInputActionValue& Value);
 	void OnNormalAttack(const FInputActionValue& Value);
+	void OnDashAttack(const FInputActionValue& Value);
 		
 	bool IsMovable();
 	void SetLocomotionState();
@@ -71,7 +72,10 @@ protected:
 	float GetDegreeFromLocation(FVector Location);
 
 	// Dash
-	void RemoveSyncPoint();
+	void GetAttackTargetActor();
+	float GetTargetScoreByDistance(FVector Location);
+	void SetWarpTarget();
+	void ResetWarpTarget();
 
 	// Knockback
 	void SetKnockbackDirection(FVector KnockbackDirection);
@@ -176,6 +180,26 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Combat | Knockback")
 	float KnockbackChance = 0.7f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TObjectPtr<AActor> AttackTarget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TArray<FHitResult> AttackOutHits;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TArray<TObjectPtr<AActor>> TargetActors;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TArray<float> TargetScores;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	float AttackAngle = 60.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TObjectPtr<AActor> PrevAttackTarget;
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	float AttackRange = 1000.f;
 
 public:
 	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }
