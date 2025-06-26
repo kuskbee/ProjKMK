@@ -19,6 +19,7 @@ class AWeaponBase;
 class ULegacyCameraShake;
 class UNiagaraSystem;
 class UStatusComponent;
+class UTargetingSystemComponent;
 
 UCLASS()
 class PROJECTKMK_API APlayerCharacter : public ACharacter, public ICombatReactInterface
@@ -60,6 +61,8 @@ protected:
 	void OnStopJump(const FInputActionValue& Value);
 	void OnNormalAttack(const FInputActionValue& Value);
 	void OnDashAttack(const FInputActionValue& Value);
+	void OnLockOn(const FInputActionValue& Value);
+	void OnDodge(const FInputActionValue& Value);
 		
 	bool IsMovable();
 	void SetLocomotionState();
@@ -93,14 +96,25 @@ protected:
 	void PlayHitReactMontage(FString SectionName);
 	void UnbindEventHitReactMontageEnd();
 	void PlayDeathMontage(FName SectionName);
+	void PlayDodgeMontage();
+	void UnbindEventDodgeMontageEnd();
 
 	UFUNCTION()
 	void EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 
-
 	UFUNCTION()
 	void EventHitReactMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 
+	UFUNCTION()
+	void EventDodgeMontageEnd(UAnimMontage* Montage, bool bInterrupted);
+
+	// TargetSystem
+	void InitializeTargetSystem();
+	void ChangeTargetMode(ETargetingMode CurrentMode);
+	UFUNCTION()
+	void SetNormalModeCamera();
+	UFUNCTION()
+	void SetTargetModeCamera();
 
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
@@ -121,6 +135,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UStatusComponent> StatusComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
+	TObjectPtr<UTargetingSystemComponent> TargetingSystem;
+
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> IA_Jump;
 
@@ -135,6 +152,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> IA_DashAttack;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> IA_LockOn;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> IA_Dodge;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> IMC_Default;
@@ -165,6 +188,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Montage", BlueprintReadOnly)
 	int DeathIndex;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> DodgeMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<AWeaponBase> WeaponClass;
@@ -200,6 +226,9 @@ public:
 	TObjectPtr<AActor> PrevAttackTarget;
 	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
 	float AttackRange = 1000.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "TargetSystem")
+	ETargetingMode CurrentTargetingMode;
 
 public:
 	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }

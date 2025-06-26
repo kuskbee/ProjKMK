@@ -10,7 +10,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeadSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnChangeHpSignature, float, CurHp, float, MaxHp);
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROJECTKMK_API UStatusComponent : public UActorComponent
 {
 	GENERATED_BODY()
