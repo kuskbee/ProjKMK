@@ -4,6 +4,7 @@
 #include "MyMonAIController.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "WyvernCharacter.h"
+#include "BehaviorTree/BehaviorTree.h"
 
 AMyMonAIController::AMyMonAIController()
 {
@@ -11,7 +12,7 @@ AMyMonAIController::AMyMonAIController()
 
 	SetPerceptionComponent(*AIPerception);
 
-	AIPerception->OnTargetPerceptionUpdated.Add()
+	//AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, );
 }
 
 void AMyMonAIController::OnPossess(APawn* InPawn)
@@ -21,7 +22,10 @@ void AMyMonAIController::OnPossess(APawn* InPawn)
 	AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(InPawn);
 	if (WyvernCharacter)
 	{
-		RunBehaviorTree(WyvernCharacter->WyvernBehaviorTree); 
+		if (WyvernCharacter->WyvernBehaviorTree)
+		{
+			RunBehaviorTree(WyvernCharacter->WyvernBehaviorTree);
+		}
 	}
 }
 
