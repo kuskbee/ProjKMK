@@ -71,6 +71,14 @@ void AWyvernCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 }
 
+float AWyvernCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+
+	return 0.0f;
+}
+
 bool AWyvernCharacter::Attack()
 {
 	switch (Phase)
@@ -157,6 +165,11 @@ void AWyvernCharacter::SetMonState(FName RowName)
 
 void AWyvernCharacter::CutTail(bool IsNotCut)
 {
+	if (!GetMesh()->DoesSocketExist("blindspot"))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Socket exist : blindspot"));
+		return;
+	}
 	FTransform Transform = GetMesh()->GetSocketTransform("blindspot");
 
 	if (TailSurface)
@@ -297,7 +310,58 @@ void AWyvernCharacter::BattleTickOnThirdPhase()
 
 void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 {
+	FVector AttackLocation;
+	if (IsRightHand)
+	{
+		AttackLocation = GetMesh()->GetSocketLocation("rhand_socket");
+	}
+	else
+	{
+		if (IsMouth)
+		{
+			AttackLocation = GetMesh()->GetSocketLocation("mouth_socket");
+		}
+		else
+		{
+			AttackLocation = GetMesh()->GetSocketLocation("horn_socket");
+		}
+	}
 
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+	//ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Monster));
+
+	FHitResult OutHit;
+	UKismetSystemLibrary::SphereTraceSingleForObjects(
+		GetWorld(),
+		AttackLocation,
+		AttackLocation,
+		250.0f,
+		ObjectTypes,
+		false,
+		TArray<AActor*>(),
+		EDrawDebugTrace::None,
+		OutHit,
+		true
+	);
+
+	if (OutHit.GetActor())
+	{
+		UGameplayStatics::ApplyDamage(
+			OutHit.GetActor(),
+			Damage,
+			GetController(),
+			this,
+			NULL
+		);
+
+		IMyCombatReactInterface* Object = Cast<IMyCombatReactInterface>(OutHit.GetActor());
+		if (Object)
+		{
+			Object->ApplyHit(OutHit, this);
+		}
+	}
 }
 
 bool AWyvernCharacter::IsWeakAttack(FName BoneName)

@@ -18,18 +18,15 @@ void UAnimNotify_MyBreathStart::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 
 	if (Breath)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Breath =  %s"),
-			*Breath->GetDisplayNameText().ToString());
 		FVector SpawnLocation =
 			MeshComp->GetSocketLocation("breath_socket");
 		FRotator SpawnRotation =
 			MeshComp->GetSocketRotation("breath_socket");
 
-		//// 이거 AnimNotify 밖에서 실행시켜야 안터짐
-		//GetWorld()->SpawnActor<AMyBreath>(
-		//	Breath,
-		//	SpawnLocation,
-		//	SpawnRotation
-		//);
+		MeshComp->GetWorld()->SpawnActor<AMyBreath>(
+			Breath,
+			SpawnLocation,
+			SpawnRotation
+		);
 	}
 }

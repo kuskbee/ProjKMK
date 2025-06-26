@@ -18,6 +18,7 @@ class UMotionWarpingComponent;
 class UMonStateComponent;
 class UAnimMontage;
 class UNiagaraSystem;
+class UBehaviorTree;
 
 UCLASS()
 class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public IMyCombatReactInterface
@@ -59,6 +60,11 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
 	TObjectPtr<UDataTable> ThirdPhaseTable;
+
+	UPROPERTY(EditAnywhere, Category = "AI", BlueprintReadWrite)
+	TObjectPtr<UBehaviorTree> WyvernBehaviorTree;
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 	UFUNCTION(BlueprintCallable)
 	virtual bool Attack() override;

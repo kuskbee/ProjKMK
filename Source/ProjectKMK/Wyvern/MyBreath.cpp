@@ -4,9 +4,10 @@
 #include "MyBreath.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/SphereComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
-
 #include "TimerManager.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "MyCombatReactInterface.h"
 
 // Sets default values
 AMyBreath::AMyBreath()
@@ -14,17 +15,13 @@ AMyBreath::AMyBreath()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 0"));
-
 	USceneComponent* SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
 
-	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 1"));
 	Particle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleSystem"));
 	Particle->SetupAttachment(SceneRoot);
 	Particle->SetRelativeScale3D(FVector(2.5f, 2.5f, 2.5f));
 
-	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 2"));
 	End = CreateDefaultSubobject<USphereComponent>(TEXT("End"));
 	End->SetupAttachment(Particle);
 	End->SetRelativeLocation(FVector(0, 0, 712.0f));
@@ -32,14 +29,11 @@ AMyBreath::AMyBreath()
 	End->SetRelativeScale3D(FVector(0.4f, 0.4f, 0.4f));
 	End->SetSphereRadius(32.0f);
 
-	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 3"));
 	Start = CreateDefaultSubobject<USphereComponent>(TEXT("Start"));
 	Start->SetupAttachment(Particle);
 	Start->SetRelativeLocation(FVector(0, 0, 56.0f));
 	Start->SetRelativeRotation(FRotator(-90.0f, 180.0f, 180.0f));
 	Start->SetRelativeScale3D(FVector(0.4f, 0.4f, 0.4f));
-
-	UE_LOG(LogTemp, Warning, TEXT("AMyBreath 4"));
 
 }
 
@@ -48,6 +42,15 @@ void AMyBreath::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	UKismetSystemLibrary::K2_SetTimer(
+		this,
+		"BreathDamage",
+		0.5f,
+		true,
+		false
+	);
+
+	SetLifeSpan(1.85f);
 }
 
 // Called every frame
@@ -84,5 +87,22 @@ void AMyBreath::BreathDamage()
 		FLinearColor::Green, 
 		500.0f
 	);
+
+	if (OutHit.GetActor())
+	{
+		UGameplayStatics::ApplyDamage(
+			OutHit.GetActor(),
+			Damage,
+			OutHit.GetActor()->GetInstigatorController(),
+			this,
+			NULL
+		);
+
+		IMyCombatReactInterface* Object = Cast<IMyCombatReactInterface>(OutHit.GetActor());
+		if (Object)
+		{
+			Object->ApplyHit(OutHit, this);
+		}
+	}
 }
 
