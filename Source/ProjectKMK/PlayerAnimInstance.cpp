@@ -33,10 +33,10 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	//
 	APlayerCharacter* Player = Cast<APlayerCharacter>(Character);
-	/*if (Player)
+	if (Player)
 	{
 		State = Player->EchoState;
 		DeathIndex = Player->DeathIndex;
 		IsHold = Player->IsHold;
-	}*/
+	}
 }

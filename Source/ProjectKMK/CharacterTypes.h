@@ -9,3 +9,10 @@ enum class EPlayerState : uint8
 	EPS_HitReact UMETA(DisplayName = "HitReact"),
 	EPS_Dead UMETA(DisplayName = "Dead"),
 };
+
+UENUM(BlueprintType)
+enum class ETargetingMode : uint8
+{
+	ETM_NormalMode UMETA(DisplayName = "NormalMode"),
+	ETM_TargetingMode UMETA(DisplayName = "TargetingMode"),
+};

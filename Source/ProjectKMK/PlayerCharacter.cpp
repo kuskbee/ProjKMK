@@ -9,11 +9,14 @@
 #include "GroomComponent.h"
 #include "EnhancedInputComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "MotionWarpingComponent.h"
 #include "Weapon/WeaponBase.h"
+#include "StatusComponent.h"
+#include "Player/TargetingSystemComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -37,6 +40,11 @@ APlayerCharacter::APlayerCharacter()
 	Eyebrows->AttachmentName = FString("head");
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
+
+	StatusComponent = CreateDefaultSubobject<UStatusComponent>(TEXT("StatusComponent"));
+
+	TargetingSystem = CreateDefaultSubobject<UTargetingSystemComponent>(TEXT("TargetSystem"));
+	UE_LOG(LogTemp, Warning, TEXT("[Ctor]Creator TargetingSystem = %p"), TargetingSystem.Get());
 
 	// * Initialize Default Values
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0, 0, -GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),
@@ -63,8 +71,10 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	SpawnWeapon();
+	BindEventStatusComponent();
+	InitializeTargetSystem();
 }
 
 bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)
@@ -96,7 +106,7 @@ bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("<Normal HitRact>"));
-		RemoveSyncPoint();
+		ResetWarpTarget();
 	}
 
 	// HitReact Animation 처리
@@ -121,6 +131,16 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// 타겟모드일 때 타겟 유효 체크
+	if (TargetingSystem)
+	{
+		bool bInvalidTarget = (CurrentTargetingMode == ETargetingMode::ETM_TargetingMode) &&
+			false == IsValid(TargetingSystem->LockedOnTarget);
+		if (bInvalidTarget)
+		{
+			ChangeTargetMode(ETargetingMode::ETM_NormalMode);
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -135,13 +155,49 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		UEIC->BindAction(IA_Look, ETriggerEvent::Triggered, this, &APlayerCharacter::OnLook);
 		UEIC->BindAction(IA_Jump, ETriggerEvent::Started, this, &APlayerCharacter::OnJump);
 		UEIC->BindAction(IA_Jump, ETriggerEvent::Completed, this, &APlayerCharacter::OnStopJump);
-		UEIC->BindAction(IA_NormalAttack, ETriggerEvent::Triggered, this, &APlayerCharacter::OnNormalAttack);
+		UEIC->BindAction(IA_NormalAttack, ETriggerEvent::Started, this, &APlayerCharacter::OnNormalAttack);
+		UEIC->BindAction(IA_DashAttack, ETriggerEvent::Started, this, &APlayerCharacter::OnDashAttack);
+		UEIC->BindAction(IA_LockOn, ETriggerEvent::Started, this, &APlayerCharacter::OnLockOn);
+		UEIC->BindAction(IA_Dodge, ETriggerEvent::Started, this, &APlayerCharacter::OnDodge);
 	}
 
 }
 
+float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[%s] Damaged!! Amount : %f"), *this->GetName(), DamageAmount);
+
+	StatusComponent->TakeDamage(DamageAmount);
+
+	return 0.0f;
+}
+
+void APlayerCharacter::BindEventStatusComponent()
+{
+	StatusComponent->OnDead.AddDynamic(this, &APlayerCharacter::DoDeath);
+}
+
+void APlayerCharacter::DoDeath()
+{
+	EchoState = EPlayerState::EPS_Dead;
+
+	if (!DeathMontage)
+	{
+		return;
+	}
+
+	DeathIndex = FMath::RandRange(0, DeathMontage->GetNumSections() - 1);
+	FName SectionName = DeathMontage->GetSectionName(DeathIndex);
+	PlayDeathMontage(SectionName);
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
 void APlayerCharacter::OnMove(const FInputActionValue& Value)
 {
+	if (!IsMovable()) return;
+
 	FVector2D DirectionVector = Value.Get<FVector2D>();
 
 	FRotator CameraRotation = GetControlRotation();
@@ -165,11 +221,13 @@ void APlayerCharacter::OnLook(const FInputActionValue& Value)
 
 void APlayerCharacter::OnJump(const FInputActionValue& Value)
 {
+	if (!IsMovable()) return;
 	Jump();
 }
 
 void APlayerCharacter::OnStopJump(const FInputActionValue& Value)
 {
+	if (!IsMovable()) return;
 	StopJumping();
 }
 
@@ -180,6 +238,56 @@ void APlayerCharacter::OnNormalAttack(const FInputActionValue& Value)
 	{
 		ActiveAttack(false);
 	}
+}
+
+void APlayerCharacter::OnDashAttack(const FInputActionValue& Value)
+{
+	bool bIsCanAttack = IsCanAttack();
+	if (bIsCanAttack)
+	{
+		ActiveAttack(true);
+	}
+}
+
+void APlayerCharacter::OnLockOn(const FInputActionValue& Value)
+{
+	switch (CurrentTargetingMode)
+	{
+	case ETargetingMode::ETM_NormalMode:
+		ChangeTargetMode(ETargetingMode::ETM_TargetingMode);
+		break;
+	case ETargetingMode::ETM_TargetingMode:
+		ChangeTargetMode(ETargetingMode::ETM_NormalMode);
+		break;
+	}
+}
+
+void APlayerCharacter::OnDodge(const FInputActionValue& Value)
+{
+	if (IsCanPlayMontage())
+	{
+		PlayDodgeMontage();
+		EchoState = EPlayerState::EPS_Dodge;
+	}
+}
+
+bool APlayerCharacter::IsMovable()
+{
+	bool bIsMovable = false;
+	switch (EchoState)
+	{
+	case EPlayerState::EPS_Locomotion:
+		bIsMovable = true;
+		break;
+	case EPlayerState::EPS_Attack:
+	case EPlayerState::EPS_Dodge:
+	case EPlayerState::EPS_HitReact:
+	case EPlayerState::EPS_Dead:
+		bIsMovable = false;
+		break;
+	}
+
+	return bIsMovable;
 }
 
 void APlayerCharacter::SetLocomotionState()
@@ -196,12 +304,18 @@ void APlayerCharacter::ActiveAttack(bool bIsDash)
 {
 	if (bIsDash)
 	{
-		//:DASH:
+		GetAttackTargetActor();
+	}
+
+	if (bIsDash && AttackTarget)
+	{
+		SetWarpTarget();
+
+		PlayAttackMontage(true);
 	}
 	else // Normal
 	{
-		//:DASH:
-		RemoveSyncPoint();
+		ResetWarpTarget();
 
 		PlayAttackMontage(false);
 	}
@@ -256,7 +370,104 @@ float APlayerCharacter::GetDegreeFromLocation(FVector Location)
 	return Degree;
 }
 
-void APlayerCharacter::RemoveSyncPoint()
+void APlayerCharacter::GetAttackTargetActor()
+{
+	// Initialize Dash Variables
+	TargetActors.Empty();
+	TargetScores.Empty();
+	AttackOutHits.Empty();
+	AttackTarget = nullptr;
+
+	//Sphere Trace를 통해 일정거리 내 Target들 검출
+	FVector Location = GetActorLocation();
+	FVector Start = Location + FVector(0.f, 0.f, 100.f);
+	FVector End = Location + FVector(0.f, 0.f, -100.f);
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel2));
+	
+	TArray<TObjectPtr<AActor>> IgnoreActors;
+	IgnoreActors.Add(this);
+
+	bool bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
+		GetWorld(),
+		Start,
+		End,
+		AttackRange,
+		ObjectTypes,
+		false,
+		IgnoreActors,
+		EDrawDebugTrace::ForDuration,
+		AttackOutHits,
+		true
+	);
+
+	if (!bHit)
+	{
+		return;
+	}
+
+	for (FHitResult Hit : AttackOutHits)
+	{
+		TObjectPtr<AActor> HitActor = Hit.GetActor();
+
+		// Check AttackTarget By Degree
+		FVector HitActorLocation = HitActor->GetActorLocation();
+		float Degree = GetDegreeFromLocation(HitActorLocation);
+
+		if (FMath::Abs(Degree) <= AttackAngle)
+		{
+			TargetActors.Add(HitActor);
+
+			float Score = GetTargetScoreByDistance(HitActorLocation);
+			Score -= (PrevAttackTarget == HitActor) ? 100.f : 0.f;
+
+			TargetScores.Add(Score);
+		}
+	}
+
+	// 점수 기반 최종 타겟 선정
+	float MaxScore = 0.f;
+	int MaxIndex;
+	UKismetMathLibrary::MaxOfFloatArray(TargetScores, MaxIndex, MaxScore);
+
+	if (0 <= MaxIndex && MaxIndex < TargetScores.Num())
+	{
+		AttackTarget = TargetActors[MaxIndex];
+		PrevAttackTarget = AttackTarget;
+
+		UE_LOG(LogTemp, Warning, TEXT("Seleted Target : %s"), *AttackTarget->GetName());
+	}
+}
+
+float APlayerCharacter::GetTargetScoreByDistance(FVector Location)
+{
+	//공격범위에 따른 대상과의 거리를 0~100까지의 점수로 반환
+	float Distance = (float)FVector::Dist2D(Location, GetActorLocation());
+
+	float Score = FMath::Clamp(1.f - (Distance / AttackRange), 0.f, 1.f) * 100.f;
+
+	//UE_LOG(LogTemp, Warning, TEXT("CalcScore, Distance[%f], AttackRange[%f]"), Distance, AttackRange);
+	return Score;
+}
+
+void APlayerCharacter::SetWarpTarget()
+{
+	FVector PlayerLoc = GetActorLocation();
+	FVector TargetLoc = AttackTarget->GetActorLocation();
+	float AcceptanceDistance = 100.f;
+
+	FVector MoveTargetVector = PlayerLoc - TargetLoc;
+	MoveTargetVector.Normalize();
+	MoveTargetVector = TargetLoc + MoveTargetVector * AcceptanceDistance;
+
+	FVector RotateTargetVector = TargetLoc;
+	
+	MotionWarping->AddOrUpdateWarpTargetFromLocation(FName(TEXT("TargetMove")), MoveTargetVector);
+	MotionWarping->AddOrUpdateWarpTargetFromLocation(FName(TEXT("TargetRotate")), RotateTargetVector);
+}
+
+void APlayerCharacter::ResetWarpTarget()
 {
 	MotionWarping->RemoveAllWarpTargets();
 }
@@ -374,6 +585,37 @@ void APlayerCharacter::UnbindEventHitReactMontageEnd()
 	}
 }
 
+void APlayerCharacter::PlayDeathMontage(FName SectionName)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, DeathMontage);
+	}
+}
+
+void APlayerCharacter::PlayDodgeMontage()
+{
+	UnbindEventDodgeMontageEnd();
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DodgeMontage)
+	{
+		AnimInstance->Montage_Play(DodgeMontage);
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventDodgeMontageEnd);
+	}
+}
+
+void APlayerCharacter::UnbindEventDodgeMontageEnd()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::EventDodgeMontageEnd);
+	}
+}
+
 void APlayerCharacter::EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage != NormalAttackMontage && Montage != DashAttackMontage)
@@ -398,5 +640,62 @@ void APlayerCharacter::EventHitReactMontageEnd(UAnimMontage* Montage, bool bInte
 	UnbindEventHitReactMontageEnd();
 }
 
+void APlayerCharacter::EventDodgeMontageEnd(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage != DodgeMontage)
+	{
+		return;
+	}
 
+	SetLocomotionState();
+	UnbindEventDodgeMontageEnd();
+}
 
+void APlayerCharacter::InitializeTargetSystem()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Ctor]Creator TargetingSystem = %p"), TargetingSystem.Get());
+	if (TargetingSystem)
+	{
+		//TargetingSystem->Initialize(this, FollowCamera);
+		TargetingSystem->OnLockOnNewTarget.AddDynamic(this, &APlayerCharacter::SetTargetModeCamera);
+		TargetingSystem->OnResetLockedOnTarget.AddDynamic(this, &APlayerCharacter::SetNormalModeCamera);
+	}
+}
+
+void APlayerCharacter::ChangeTargetMode(ETargetingMode CurrentMode)
+{
+	CurrentTargetingMode = CurrentMode;
+	switch (CurrentTargetingMode)
+	{
+	case ETargetingMode::ETM_NormalMode:
+	{
+		TargetingSystem->ResetLockedOnTarget();
+	}
+	break;
+	case ETargetingMode::ETM_TargetingMode:
+	{
+		TArray<AActor*> TargetEnemies = TargetingSystem->FindAllTargets();
+		if (!TargetEnemies.IsEmpty())
+		{
+			AActor* LockedOnTarget = TargetingSystem->LockOnToTarget();
+			// * 여기서도 Target에 Indicator 설정을 하네.
+		}
+	}
+	break;
+	}
+}
+
+void APlayerCharacter::SetNormalModeCamera()
+{
+	CameraBoom->SocketOffset = FVector(0.f, 0.f, 0.f);
+	CameraBoom->TargetArmLength = 400.f;
+}
+
+void APlayerCharacter::SetTargetModeCamera()
+{
+	// 기존 위치에서 조금 오른쪽 옆으로 빠지고 위로 올라감
+	CameraBoom->SocketOffset = FVector(0.f, 50.f, 50.f);
+
+	// 화면 가까이
+	CameraBoom->TargetArmLength = 150.f;
+}

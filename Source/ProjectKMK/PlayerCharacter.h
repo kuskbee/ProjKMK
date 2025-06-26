@@ -18,6 +18,8 @@ class UMotionWarpingComponent;
 class AWeaponBase;
 class ULegacyCameraShake;
 class UNiagaraSystem;
+class UStatusComponent;
+class UTargetingSystemComponent;
 
 UCLASS()
 class PROJECTKMK_API APlayerCharacter : public ACharacter, public ICombatReactInterface
@@ -42,7 +44,15 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser);
+	
 protected:
+
+	// Bind Event
+	void BindEventStatusComponent();
+
+	UFUNCTION()
+	void DoDeath();
 
 	// Input Event Function
 	void OnMove(const FInputActionValue& Value);
@@ -50,7 +60,11 @@ protected:
 	void OnJump(const FInputActionValue& Value);
 	void OnStopJump(const FInputActionValue& Value);
 	void OnNormalAttack(const FInputActionValue& Value);
+	void OnDashAttack(const FInputActionValue& Value);
+	void OnLockOn(const FInputActionValue& Value);
+	void OnDodge(const FInputActionValue& Value);
 		
+	bool IsMovable();
 	void SetLocomotionState();
 
 	// Combat
@@ -61,7 +75,10 @@ protected:
 	float GetDegreeFromLocation(FVector Location);
 
 	// Dash
-	void RemoveSyncPoint();
+	void GetAttackTargetActor();
+	float GetTargetScoreByDistance(FVector Location);
+	void SetWarpTarget();
+	void ResetWarpTarget();
 
 	// Knockback
 	void SetKnockbackDirection(FVector KnockbackDirection);
@@ -78,15 +95,26 @@ protected:
 	void UnbindEventAttackMontageEnd();
 	void PlayHitReactMontage(FString SectionName);
 	void UnbindEventHitReactMontageEnd();
-
+	void PlayDeathMontage(FName SectionName);
+	void PlayDodgeMontage();
+	void UnbindEventDodgeMontageEnd();
 
 	UFUNCTION()
 	void EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 
-
 	UFUNCTION()
 	void EventHitReactMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 
+	UFUNCTION()
+	void EventDodgeMontageEnd(UAnimMontage* Montage, bool bInterrupted);
+
+	// TargetSystem
+	void InitializeTargetSystem();
+	void ChangeTargetMode(ETargetingMode CurrentMode);
+	UFUNCTION()
+	void SetNormalModeCamera();
+	UFUNCTION()
+	void SetTargetModeCamera();
 
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
@@ -104,6 +132,12 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UMotionWarpingComponent> MotionWarping;
 
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
+	TObjectPtr<UStatusComponent> StatusComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
+	TObjectPtr<UTargetingSystemComponent> TargetingSystem;
+
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> IA_Jump;
 
@@ -118,6 +152,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> IA_DashAttack;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> IA_LockOn;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> IA_Dodge;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> IMC_Default;
@@ -143,8 +183,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> HitReactMontage;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> DeathMontage;
+
 	UPROPERTY(VisibleAnywhere, Category = "Montage", BlueprintReadOnly)
 	int DeathIndex;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> DodgeMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<AWeaponBase> WeaponClass;
@@ -160,6 +206,29 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Combat | Knockback")
 	float KnockbackChance = 0.7f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TObjectPtr<AActor> AttackTarget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TArray<FHitResult> AttackOutHits;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TArray<TObjectPtr<AActor>> TargetActors;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TArray<float> TargetScores;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	float AttackAngle = 60.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	TObjectPtr<AActor> PrevAttackTarget;
+	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	float AttackRange = 1000.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "TargetSystem")
+	ETargetingMode CurrentTargetingMode;
 
 public:
 	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }
