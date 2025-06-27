@@ -16,6 +16,14 @@ struct FMyMonState : public FTableRowBase
 	GENERATED_BODY()
 
 public:
+	FMyMonState()
+	{
+		Name = "None";
+		MaxHP = 0.0f;
+		WeaknessHP = 0.0f;
+		Phase = EPhase::FirstPhase;
+	}
+
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "Name", MakeStructureDefaultValue = "None"), BlueprintReadWrite)
 	FString Name;
 

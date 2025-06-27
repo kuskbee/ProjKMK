@@ -14,6 +14,10 @@
 #include "MyLegacyCameraShake.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Particles/ParticleSystem.h"
+#include "MyMonAIController.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "../PlayerCharacter.h"
 
 // Sets default values
 AWyvernCharacter::AWyvernCharacter()
@@ -51,10 +55,16 @@ void AWyvernCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPhase"), true);
+	const UEnum* EnumPtr = StaticEnum<EPhase>();
 	FString EPhaseName = EnumPtr->GetNameStringByValue(static_cast<int64>(Phase));
 
 	SetMonState((FName) EPhaseName);
+
+	MonStateComponent->EventDispatcher_Death.AddDynamic(this,
+		&AWyvernCharacter::DoDeath);
+
+	OnTakePointDamage.AddDynamic(this,
+		&AWyvernCharacter::EventProcessTakePointDamage);
 }
 
 // Called every frame
@@ -62,6 +72,23 @@ void AWyvernCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	EventAITick();
+	
+	if (MonAIState == EAIState::Runaway)
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying, 0);
+		AddActorWorldOffset(FVector(0, 0, DeltaTime * 300.0f));
+
+		if (GetActorLocation().Z > 3000.0f)
+		{
+			if (IsValid(TailSurface))
+			{
+				TailSurface->K2_DestroyActor();
+			}
+			K2_DestroyActor();
+		}
+
+	}
 }
 
 // Called to bind functionality to input
@@ -71,12 +98,11 @@ void AWyvernCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 }
 
-float AWyvernCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+void AWyvernCharacter::PossessedBy(AController* NewController)
 {
-	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	Super::PossessedBy(NewController);
 
-
-	return 0.0f;
+	InitAI(NewController);
 }
 
 bool AWyvernCharacter::Attack()
@@ -140,11 +166,25 @@ bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
 
 		if (IsWeakAttack(HitResult.BoneName))
 		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeakAttackEffect, HitResult.ImpactPoint); 
+			if (WeakAttackEffect)
+			{
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeakAttackEffect, HitResult.ImpactPoint);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("WeakAttackEffect is null"));
+			}
 		}
 		else
 		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NotWeakAttackEffect, HitResult.ImpactPoint);
+			if (NotWeakAttackEffect)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), NotWeakAttackEffect, HitResult.ImpactPoint);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("NotWeakAttackEffect is null"));
+			}
 		}
 
 		return true;
@@ -174,7 +214,7 @@ void AWyvernCharacter::CutTail(bool IsNotCut)
 
 	if (TailSurface)
 	{
-		AMySurface* Surface = Cast<AMySurface>(GetWorld()->SpawnActor(TailSurface));
+		AMySurface* Surface = Cast<AMySurface>(GetWorld()->SpawnActor(TailSurface->StaticClass()));
 		Surface->AttachToComponent(
 			GetMesh(),
 			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
@@ -206,7 +246,7 @@ void AWyvernCharacter::CutTail(bool IsNotCut)
 				ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 			FTransform SpawnTransform(FRotator(0.f, 0.f, 0.f), TailSpawnPoint, FVector(1.0f, 1.0f, 1.0f));
 			GetWorld()->SpawnActor<AActor>(
-				TailSurface,
+				TailSurface->StaticClass(),
 				SpawnTransform,
 				SpawnParams
 			);
@@ -222,6 +262,30 @@ void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
 	{
 		EventAttackEnd.Broadcast();
 	}
+}
+
+void AWyvernCharacter::EventUpdateMonAIState(EAIState In_MonAIState)
+{
+	MonAIState = In_MonAIState;
+}
+
+void AWyvernCharacter::EventUpdateMonPhase(EPhase In_Phase)
+{
+	Phase = In_Phase;
+}
+
+void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float In_Damage,
+	AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, 
+	const UDamageType* DamageType, AActor* DamageCauser)
+{
+	AMyMonAIController* MonController = Cast< AMyMonAIController>(GetController());
+	if (MonController)
+	{
+		MonController->ChasePlayer(InstigatedBy->GetPawn());
+	}
+
+	MonStateComponent->AddDamage(In_Damage, BoneName, Phase);
+
 }
 
 void AWyvernCharacter::BattleTickOnFirstPhase()
@@ -308,6 +372,29 @@ void AWyvernCharacter::BattleTickOnThirdPhase()
 	}
 }
 
+void AWyvernCharacter::EventAITick()
+{
+	//switch (MonAIState)
+	//{
+	//case EAIState::Battle:
+	//	switch (Phase)
+	//	{
+	//	case EPhase::FirstPhase:
+	//		BattleTickOnFirstPhase();
+	//		break;
+	//	case EPhase::SecondPhase:
+	//		BattleTickOnSecondPhase();
+	//		break;
+	//	case EPhase::ThirdPhase:
+	//		BattleTickOnThirdPhase();
+	//		break;
+	//	}
+	//	break;
+	//default:
+	//	break;
+	//}
+}
+
 void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 {
 	FVector AttackLocation;
@@ -330,7 +417,7 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
-	//ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Monster));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel2));
 
 	FHitResult OutHit;
 	UKismetSystemLibrary::SphereTraceSingleForObjects(
@@ -380,4 +467,121 @@ bool AWyvernCharacter::IsWeakAttack(FName BoneName)
 		return false;
 	}
 	return false;
+}
+
+void AWyvernCharacter::InitAI(UObject* In_Controller)
+{
+	AMyMonAIController* MonAIController = Cast<AMyMonAIController>(In_Controller);
+
+	if (MonAIController)
+	{
+		MonAIController->EventDispatcher_ChangeMonAIState.AddDynamic(this,
+			&AWyvernCharacter::EventUpdateMonAIState);
+
+		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this,
+			&AWyvernCharacter::EventMontageEnd);
+	}
+}
+
+void AWyvernCharacter::UpdateWalkSpeed(float In_WalkSpeed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = In_WalkSpeed;
+}
+
+bool AWyvernCharacter::IsMonsterMovable()
+{
+	bool IsMovable = false;
+	switch (MonAIState)
+	{
+	case(EAIState::None):
+		IsMovable = true;
+		break;
+
+	case(EAIState::Patrol):
+		IsMovable = true;
+		break;
+
+	case(EAIState::Chase):
+		IsMovable = true;
+		break;
+
+	case(EAIState::Battle):
+		IsMovable = false;
+		break;
+
+	case(EAIState::Dead):
+		IsMovable = false;
+		break;
+
+	case(EAIState::Runaway):
+		IsMovable = true;
+		break;
+
+	case(EAIState::RunawayReady):
+		IsMovable = true;
+		break;
+	}
+	return IsMovable;
+}
+
+void AWyvernCharacter::DoDeath()
+{
+	switch (Phase)
+	{
+	case EPhase::FirstPhase:
+		if (HowlingMontage)
+		{
+			MonAIState = EAIState::RunawayReady;
+			PlayAnimMontage(HowlingMontage);
+			IsPlayMontage = true;
+		}
+
+		break;
+
+	case EPhase::SecondPhase:
+		if (RevivalMontage)
+		{
+			MonAIState = EAIState::RunawayReady;
+			PlayAnimMontage(RevivalMontage);
+			IsPlayMontage = true;
+		}
+
+		break;
+
+	case EPhase::ThirdPhase:
+		if (DeadMontage)
+		{
+			MonAIState = EAIState::Dead;
+			PlayAnimMontage(DeadMontage);
+		}
+
+		break;
+	}
+	DeadCollision();
+
+	// Need APlayerCharcter Function!!!
+	// 
+	// 
+	//APlayerCharacter* PlayerChar = Cast<APlayerCharacter>
+	//	(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
+	//if (PlayerChar)
+	//{
+	//	PlayerChar->ChangeCameraToAnotherView();
+	//}
+}
+
+void AWyvernCharacter::DeadCollision()
+{
+	AController* MyController = GetController();
+	if (MyController)
+	{
+		MyController->UnPossess();
+
+		MyController->K2_DestroyActor();
+
+		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &AWyvernCharacter::EventMontageEnd);
+
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }

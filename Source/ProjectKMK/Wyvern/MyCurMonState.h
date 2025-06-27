@@ -23,6 +23,8 @@ public:
 		MonData.MaxHP = 0.0f;
 		MonData.WeaknessHP = 0.0f;
 		MonData.Phase = EPhase::FirstPhase;
+		CurHP = 0.0f;
+		CurWeakHP = 0.0f;
 	}
 
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "MonData"), BlueprintReadWrite)
