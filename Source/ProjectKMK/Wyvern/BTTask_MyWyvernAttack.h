@@ -15,5 +15,4 @@ class PROJECTKMK_API UBTTask_MyWyvernAttack : public UBTTask_BlackboardBase
 	GENERATED_BODY()
 public:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
-
 };
