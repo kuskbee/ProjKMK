@@ -6,6 +6,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 #include "WyvernCharacter.h"
+#include "Navigation\PathFollowingComponent.h"
 
 EBTNodeResult::Type UBTT_MyWyvernChaseTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -20,8 +21,25 @@ EBTNodeResult::Type UBTT_MyWyvernChaseTarget::ExecuteTask(UBehaviorTreeComponent
         AActor* Target = Cast<AActor>(TargetActor.SelectedKeyType);
        
         // AIMoveTo....
-        OwnerComp.GetAIOwner()->MoveToActor(Target);
-        return EBTNodeResult::Succeeded;
+		FAIMoveRequest MoveRequest;
+		MoveRequest.SetGoalLocation(FVector(0, 0, 0));
+		MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
+
+		FNavPathSharedPtr NavPath;
+		EPathFollowingRequestResult::Type Result = OwnerComp.GetAIOwner()->MoveTo(MoveRequest, &NavPath);
+
+		if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+		{
+			return EBTNodeResult::Succeeded;
+		}
+		else if (Result == EPathFollowingRequestResult::RequestSuccessful)
+		{
+			return EBTNodeResult::InProgress;
+		}
+		else if (Result == EPathFollowingRequestResult::Failed)
+		{
+			return EBTNodeResult::Failed;
+		}
     }
 
     return EBTNodeResult::Failed;
