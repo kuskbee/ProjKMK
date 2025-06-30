@@ -18,7 +18,7 @@ enum class EPhase : uint8
 	ThirdPhase = 2 UMETA(DisplayName = "ThirdPhase")
 };
 
-UENUM(Blueprinttype)
+UENUM(BlueprintType)
 enum class EAIState : uint8
 {
 	None = 0 UMETA(DisplayName = "None"),

@@ -17,8 +17,6 @@ AMyMonAIController::AMyMonAIController()
 
 	SetPerceptionComponent(*AIPerception);
 
-	//Perception Settings
-
 	UAISenseConfig_Sight* SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight_Config"));
 	UAISenseConfig_Touch* TouchConfig = CreateDefaultSubobject<UAISenseConfig_Touch>(TEXT("Touch_Config"));
 
@@ -37,6 +35,7 @@ AMyMonAIController::AMyMonAIController()
 
 	GetPerceptionComponent()->ConfigureSense(*SightConfig);
 	GetPerceptionComponent()->ConfigureSense(*TouchConfig);
+
 }
 
 void AMyMonAIController::BeginPlay()
@@ -45,7 +44,6 @@ void AMyMonAIController::BeginPlay()
 
 	AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, 
 		&AMyMonAIController::ProcessPerceptionUpdated);
-
 }
 
 void AMyMonAIController::OnPossess(APawn* InPawn)
@@ -53,6 +51,7 @@ void AMyMonAIController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(InPawn);
+
 	if (WyvernCharacter)
 	{
 		if (WyvernCharacter->WyvernBehaviorTree)
@@ -71,9 +70,11 @@ void AMyMonAIController::OnUnPossess()
 
 void AMyMonAIController::ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Cast"));
 	APlayerCharacter* PlayerCharacter = Cast< APlayerCharacter>(Actor);
 	if (PlayerCharacter)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ProcessPerceptionUpdated"));
 		ChasePlayer(PlayerCharacter);
 	}
 
@@ -84,6 +85,7 @@ void AMyMonAIController::ChasePlayer(AActor* Actor)
 	AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(K2_GetPawn());
 	if (WyvernCharacter)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ChasePlayer"));
 		if (WyvernCharacter->MonAIState != EAIState::Battle)
 		{
 			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);

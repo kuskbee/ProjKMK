@@ -29,12 +29,14 @@ public:
 	AMyMonAIController();
 	virtual void BeginPlay() override;
 
-protected:
-
-	virtual void OnPossess(APawn* InPawn) override;
-	virtual void OnUnPossess() override;
+//protected:
+//
+//	virtual void OnPossess(APawn* InPawn) override;
+//	virtual void OnUnPossess() override;
 
 public:
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UAIPerceptionComponent> AIPerception;
