@@ -12,7 +12,8 @@
 				"Engine",
 				"CoreUObject",
 				"AIModule",
-				"EngineCameras"
+				"EngineCameras",
+				"UMG"
 			]
 		}
 	],

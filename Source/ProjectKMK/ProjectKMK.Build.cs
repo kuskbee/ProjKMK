@@ -10,7 +10,7 @@ public class ProjectKMK : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore"
 															, "EnhancedInput", "HairStrandsCore"
-															, "MotionWarping", "Niagara"
+															, "MotionWarping", "Niagara", "UMG"
                                                             });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

@@ -4,6 +4,9 @@
 #include "KMKPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "PlayerCharacter.h"
+#include "UI/MyHUD.h"
+#include "StatusComponent.h"
+#include "GameFramework/HUD.h"
 
 AKMKPlayerController::AKMKPlayerController()
 {
@@ -41,4 +44,20 @@ void AKMKPlayerController::OnUnPossess()
 void AKMKPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(ControlledPawn))
+		{
+			if (UStatusComponent* StatusComponent = PlayerCharacter->StatusComponent)
+			{
+				if (AMyHUD* LocalHUD = Cast<AMyHUD>(GetHUD()))
+				{
+					LocalHUD->BindPlayerEvent(StatusComponent);
+
+					StatusComponent->UpdateUIHp();
+				}
+			}
+		}
+	}
 }
