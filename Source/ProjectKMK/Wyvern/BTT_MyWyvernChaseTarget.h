@@ -20,10 +20,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Key", BlueprintReadWrite)
 	FBlackboardKeySelector TargetActor;
 
-	UPROPERTY(EditAnywhere, Category = "Value", BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
 	float ChaseSpeed = 500.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Value", BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
 	float AcceptanceRadius = 300.0f;
 
 };

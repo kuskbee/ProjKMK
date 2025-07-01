@@ -36,13 +36,16 @@ AMyMonAIController::AMyMonAIController()
 	GetPerceptionComponent()->ConfigureSense(*SightConfig);
 	GetPerceptionComponent()->ConfigureSense(*TouchConfig);
 
+
+	GetPerceptionComponent()->SetDominantSense(*SightConfig->GetSenseImplementation());
+
 }
 
 void AMyMonAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, 
+	GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this,
 		&AMyMonAIController::ProcessPerceptionUpdated);
 }
 
@@ -70,22 +73,27 @@ void AMyMonAIController::OnUnPossess()
 
 void AMyMonAIController::ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Cast"));
 	APlayerCharacter* PlayerCharacter = Cast< APlayerCharacter>(Actor);
 	if (PlayerCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ProcessPerceptionUpdated"));
 		ChasePlayer(PlayerCharacter);
 	}
 
 }
 
+void AMyMonAIController::UpdateMonState()
+{
+	if ((EAIState)GetBlackboardComponent()->GetValueAsEnum("MonAIState") != AIState)
+	{
+		EventDispatcher_ChangeMonAIState.Broadcast(AIState);
+	}
+}
+
 void AMyMonAIController::ChasePlayer(AActor* Actor)
 {
-	AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(K2_GetPawn());
+	AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
 	if (WyvernCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ChasePlayer"));
 		if (WyvernCharacter->MonAIState != EAIState::Battle)
 		{
 			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);

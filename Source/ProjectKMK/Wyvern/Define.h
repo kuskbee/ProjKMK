@@ -21,12 +21,12 @@ enum class EPhase : uint8
 UENUM(BlueprintType)
 enum class EAIState : uint8
 {
-	None = 0 UMETA(DisplayName = "None"),
-	Patrol = 1 UMETA(DisplayName = "Patrol"),
-	Chase = 2 UMETA(DisplayName = "Chase"),
-	Battle = 3 UMETA(DisplayName = "Battle"),
-	Dead = 4 UMETA(DisplayName = "Dead"),
-	Runaway = 5 UMETA(DisplayName = "Runaway"),
+	None =		0 UMETA(DisplayName = "None"),
+	Patrol =	1 UMETA(DisplayName = "Patrol"),
+	Chase =		2 UMETA(DisplayName = "Chase"),
+	Battle =	3 UMETA(DisplayName = "Battle"),
+	Dead =		4 UMETA(DisplayName = "Dead"),
+	Runaway =	5 UMETA(DisplayName = "Runaway"),
 	RunawayReady = 6 UMETA(DisplayName = "RunawayReady")
 };
 

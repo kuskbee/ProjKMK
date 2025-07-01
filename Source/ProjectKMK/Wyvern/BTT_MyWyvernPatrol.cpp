@@ -35,19 +35,16 @@ EBTNodeResult::Type UBTT_MyWyvernPatrol::ExecuteTask(UBehaviorTreeComponent& Own
 			FNavPathSharedPtr NavPath;
 			EPathFollowingRequestResult::Type Result = OwnerComp.GetAIOwner()->MoveTo(MoveRequest, &NavPath);
 
-
-			if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+			if (Result == EPathFollowingRequestResult::RequestSuccessful)
 			{
 				return EBTNodeResult::Succeeded;
 			}
-			else if (Result == EPathFollowingRequestResult::RequestSuccessful)
-			{
-				return EBTNodeResult::InProgress;
-			}
-			else if (Result == EPathFollowingRequestResult::Failed)
+			else
 			{
 				return EBTNodeResult::Failed;
 			}
+
+
 		}
 		else
 		{

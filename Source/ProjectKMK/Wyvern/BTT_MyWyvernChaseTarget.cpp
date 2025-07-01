@@ -18,28 +18,24 @@ EBTNodeResult::Type UBTT_MyWyvernChaseTarget::ExecuteTask(UBehaviorTreeComponent
     if (WyvernChar)
     {
         WyvernChar->UpdateWalkSpeed(ChaseSpeed);
-        AActor* Target = Cast<AActor>(TargetActor.SelectedKeyType);
-       
-        // AIMoveTo....
+		AActor* Target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(TargetActor.SelectedKeyName));
+
 		FAIMoveRequest MoveRequest;
-		MoveRequest.SetGoalLocation(FVector(0, 0, 0));
 		MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
+		MoveRequest.SetGoalActor(Target);
 
 		FNavPathSharedPtr NavPath;
 		EPathFollowingRequestResult::Type Result = OwnerComp.GetAIOwner()->MoveTo(MoveRequest, &NavPath);
 
-		if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+		if (Result == EPathFollowingRequestResult::RequestSuccessful)
 		{
 			return EBTNodeResult::Succeeded;
 		}
-		else if (Result == EPathFollowingRequestResult::RequestSuccessful)
-		{
-			return EBTNodeResult::InProgress;
-		}
-		else if (Result == EPathFollowingRequestResult::Failed)
+		else
 		{
 			return EBTNodeResult::Failed;
 		}
+
     }
 
     return EBTNodeResult::Failed;

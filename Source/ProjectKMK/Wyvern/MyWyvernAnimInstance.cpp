@@ -10,7 +10,7 @@ void UMyWyvernAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	Character = Cast<ACharacter>(TryGetPawnOwner());
+	Character = Cast<ACharacter>(GetOwningActor());
 	if (Character)
 	{
 		MovementComponent = Character->GetCharacterMovement();
@@ -26,15 +26,13 @@ void UMyWyvernAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Velocity = MovementComponent->Velocity;
 		GroundSpeed = Velocity.Size2D();
 
-		if (MovementComponent->GetCurrentAcceleration().Size() > 0 && GroundSpeed > 3.0f)
-		{
-			bShouldMove = true;
-		}
+		bShouldMove = MovementComponent->GetCurrentAcceleration().Size() != 0 && GroundSpeed > 3.0f;
+
 
 		bIsFalling = MovementComponent->IsFalling();
 
 		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(Character);
-		if (IsValid(WyvernCharacter))
+		if (WyvernCharacter)
 		{
 			MonAIState = WyvernCharacter->MonAIState;
 			Phase = WyvernCharacter->Phase;

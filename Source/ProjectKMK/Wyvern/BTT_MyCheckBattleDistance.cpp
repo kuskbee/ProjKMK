@@ -12,25 +12,31 @@ EBTNodeResult::Type UBTT_MyCheckBattleDistance::ExecuteTask(UBehaviorTreeCompone
 	Super::ExecuteTask(OwnerComp, NodeMemory);
 
 	APawn* MyPawn = OwnerComp.GetAIOwner()->GetPawn();
-	IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
 
-	AActor* Target = Cast<AActor>(TargetActor.SelectedKeyType);
+	AActor* Target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->
+		GetValueAsObject(TargetActor.SelectedKeyName));
 
-	if (Wyvern && Target)
+	if (Target)
 	{
+		
+		UE_LOG(LogTemp, Warning, TEXT("%f"), MyPawn->GetDistanceTo(Target));
 		if (MyPawn->GetDistanceTo(Target) <= Distance)
 		{
+			IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
+
 			Wyvern->SetAIState(EAIState::Battle);
+
 			OwnerComp.GetBlackboardComponent()->SetValueAsEnum(TEXT("MonAIState"), (uint8) EAIState::Battle);
-			return EBTNodeResult::Succeeded;
+			
+			return EBTNodeResult::Failed;
 		}
 		else
 		{
-			return EBTNodeResult::Failed;
+			return EBTNodeResult::Succeeded;
 		}
 	}
 	else
 	{
-		return EBTNodeResult::Failed;
+		return EBTNodeResult::Succeeded;
 	}
 }

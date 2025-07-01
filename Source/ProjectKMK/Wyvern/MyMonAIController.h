@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-
 #include "Perception/AIPerceptionTypes.h"
 #include "Define.h"
 #include "MyMonAIController.generated.h"
@@ -29,11 +28,6 @@ public:
 	AMyMonAIController();
 	virtual void BeginPlay() override;
 
-//protected:
-//
-//	virtual void OnPossess(APawn* InPawn) override;
-//	virtual void OnUnPossess() override;
-
 public:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
@@ -44,9 +38,18 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcher_ChangeMonAIState EventDispatcher_ChangeMonAIState;
 
+	UPROPERTY(VisibleAnywhere, Category = "State", BlueprintReadOnly)
+	EAIState AIState;
+
 	UFUNCTION()
 	void ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
+	UFUNCTION()
+	void UpdateMonState();
+
+	UFUNCTION()
 	void ChasePlayer(AActor* Actor);
+
+	UFUNCTION()
 	void ShowMonsterHealthBar();
 };
