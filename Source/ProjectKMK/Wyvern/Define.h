@@ -29,24 +29,3 @@ enum class EAIState : uint8
 	Runaway =	5 UMETA(DisplayName = "Runaway"),
 	RunawayReady = 6 UMETA(DisplayName = "RunawayReady")
 };
-
-USTRUCT(BlueprintType)
-struct FMonsterSkill : public FTableRowBase
-{
-	GENERATED_BODY()
-
-public:
-	FMonsterSkill()
-	{
-		MonSkillName = "";
-		Damage = 0.0f;
-	}
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "MonSkillName", MakeStructureDefaultValue = "None"), BlueprintReadWrite)
-	FString MonSkillName;
-
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "Damage", MakeStructureDefaultValue = "0.0"), BlueprintReadWrite)
-	float Damage;
-
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "AnimMontage"), BlueprintReadWrite)
-	TObjectPtr<UAnimMontage> AnimMontage;
-};

@@ -157,7 +157,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> RevivalMontage;
 
-	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, Category = "Animations", BlueprintReadOnly)
 	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)

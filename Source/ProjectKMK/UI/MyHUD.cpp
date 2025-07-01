@@ -53,7 +53,7 @@ void AMyHUD::BindWyvernEvent(ACharacter* WyvernCharacter)
 	UMonStateComponent* MonStateComponent = WyvernCharacter->FindComponentByClass<UMonStateComponent>();
 	if (!MonStateComponent) return;
 
-	MonStateComponent->EventDispatcherUpdateHP.AddDynamic(this, &AMyHUD::EventMonsterUpdateHP);
+	MonStateComponent->EventDispatcher_UpdateHP.AddDynamic(this, &AMyHUD::EventMonsterUpdateHP);
 
 	const FMyCurMonState& CurMonState = MonStateComponent->CurMonState;
 
