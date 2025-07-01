@@ -38,16 +38,16 @@ public:
 	EPhase Phase;
 
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
-	FEventDispatcher_MonState EventDispatcherMonState;
+	FEventDispatcher_MonState EventDispatcher_MonState;
 
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
-	FEventDispatcher_UpdateHP EventDispatcherUpdateHP;
+	FEventDispatcher_UpdateHP EventDispatcher_UpdateHP;
 
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
-	FEventDispatcher_Death EventDispatcherDeath;
+	FEventDispatcher_Death EventDispatcher_Death;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
-	UDataTable* MonStateDataTable;
+	TObjectPtr<UDataTable> MonStateDataTable;
 
 	UFUNCTION(BlueprintCallable)
 	void AddDamage(float Damage, FName BoneName, EPhase MonsterPhase);

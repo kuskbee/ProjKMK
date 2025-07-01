@@ -50,7 +50,7 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 			{
 				CurMonState.CurHP = CurMonState.CurHP - Damage;
 				CurMonState.CurWeakHP = CurMonState.CurWeakHP - Damage;
-				EventDispatcherUpdateHP.Broadcast(
+				EventDispatcher_UpdateHP.Broadcast(
 					CurMonState.MonData.MaxHP,
 					CurMonState.MonData.WeaknessHP,
 					CurMonState.CurHP,
@@ -59,14 +59,14 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 
 				if (IsDeath(CurMonState))
 				{
-					EventDispatcherDeath.Broadcast();
+					EventDispatcher_Death.Broadcast();
 				}
 			}
 			else
 			{
 				CurMonState.CurHP = CurMonState.CurHP - Damage;
 				CurMonState.CurWeakHP = CurMonState.CurWeakHP;
-				EventDispatcherUpdateHP.Broadcast(
+				EventDispatcher_UpdateHP.Broadcast(
 					CurMonState.MonData.MaxHP,
 					CurMonState.MonData.WeaknessHP,
 					CurMonState.CurHP,
@@ -75,7 +75,7 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 
 				if (IsDeath(CurMonState))
 				{
-					EventDispatcherDeath.Broadcast();
+					EventDispatcher_Death.Broadcast();
 				}
 			}
 		}
@@ -89,7 +89,7 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 				{
 					CurMonState.CurHP = CurMonState.CurHP - Damage;
 					CurMonState.CurWeakHP = CurMonState.CurWeakHP - Damage;
-					EventDispatcherUpdateHP.Broadcast(
+					EventDispatcher_UpdateHP.Broadcast(
 						CurMonState.MonData.MaxHP,
 						CurMonState.MonData.WeaknessHP,
 						CurMonState.CurHP,
@@ -97,14 +97,14 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 					);
 					if (IsDeath(CurMonState))
 					{
-						EventDispatcherDeath.Broadcast();
+						EventDispatcher_Death.Broadcast();
 					}
 				}
 				else
 				{
 					CurMonState.CurHP = CurMonState.CurHP - Damage;
 					CurMonState.CurWeakHP = CurMonState.CurWeakHP;
-					EventDispatcherUpdateHP.Broadcast(
+					EventDispatcher_UpdateHP.Broadcast(
 						CurMonState.MonData.MaxHP,
 						CurMonState.MonData.WeaknessHP,
 						CurMonState.CurHP,
@@ -112,7 +112,7 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 					);
 					if (IsDeath(CurMonState))
 					{
-						EventDispatcherDeath.Broadcast();
+						EventDispatcher_Death.Broadcast();
 					}
 				}
 			}
@@ -120,7 +120,7 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 			{
 				CurMonState.CurHP = CurMonState.CurHP - Damage;
 				CurMonState.CurWeakHP = CurMonState.CurWeakHP;
-				EventDispatcherUpdateHP.Broadcast(
+				EventDispatcher_UpdateHP.Broadcast(
 					CurMonState.MonData.MaxHP,
 					CurMonState.MonData.WeaknessHP,
 					CurMonState.CurHP,
@@ -129,7 +129,7 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 
 				if (IsDeath(CurMonState))
 				{
-					EventDispatcherDeath.Broadcast();
+					EventDispatcher_Death.Broadcast();
 				}
 			}
 		}

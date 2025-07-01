@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "MySurface.generated.h"
 
+class UStaticMeshComponent;
+
 UCLASS()
 class PROJECTKMK_API AMySurface : public AActor
 {
@@ -22,5 +24,9 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> Tail;
+
 
 };
