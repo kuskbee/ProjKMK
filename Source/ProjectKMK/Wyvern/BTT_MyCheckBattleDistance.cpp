@@ -20,7 +20,6 @@ EBTNodeResult::Type UBTT_MyCheckBattleDistance::ExecuteTask(UBehaviorTreeCompone
 	{
 		if (MyPawn->GetDistanceTo(Target) <= Distance)
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("%f"), Distance);
 			IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
 
 			Wyvern->SetAIState(EAIState::Battle);

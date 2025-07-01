@@ -30,13 +30,6 @@ EBTNodeResult::Type UBTTask_MyWyvernAttack::ExecuteTask(UBehaviorTreeComponent& 
 
 void UBTTask_MyWyvernAttack::OnAttackEnd()
 {
-    if (ControlledPawn)
-    {
-        AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(ControlledPawn);
-        WyvernChar->EventAttackEnd.RemoveDynamic(this, &UBTTask_MyWyvernAttack::OnAttackEnd);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No Invaild Controlled Panw"));
-    }
+    AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(ControlledPawn);
+    WyvernChar->EventAttackEnd.RemoveDynamic(this, &UBTTask_MyWyvernAttack::OnAttackEnd);
 }

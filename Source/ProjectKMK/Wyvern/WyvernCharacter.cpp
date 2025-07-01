@@ -8,6 +8,7 @@
 #include "MotionWarpingComponent.h"
 #include "MonStateComponent.h"
 #include "Define.h"
+#include "ST_MyMonsterSkill.h"
 #include "Animation/AnimMontage.h"
 #include "MySurface.h"
 #include "Kismet/GameplayStatics.h"
@@ -296,13 +297,13 @@ void AWyvernCharacter::BattleTickOnFirstPhase()
 		if (IsValid(FirstPhaseTable))
 		{
 			TArray<FName> Names = FirstPhaseTable->GetRowNames();
-			int RandomIndex = FMath::Clamp(FMath::Rand(), 0, Names.Num() - 1);
+			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			FName RandName = Names[RandomIndex];
-			FMonsterSkill* Skill = FirstPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
+			FST_MyMonsterSkill* Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
 
-			if (IsValid(Skill->AnimMontage))
+			if (IsValid(Skill->SkillAnimMontage))
 			{
-				AttackMontage = Skill->AnimMontage;
+				AttackMontage = Skill->SkillAnimMontage;
 				PlayAnimMontage(AttackMontage, 1.2f);
 
 				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
@@ -325,12 +326,13 @@ void AWyvernCharacter::BattleTickOnSecondPhase()
 		if (IsValid(SecondPhaseTable))
 		{
 			TArray<FName> Names = SecondPhaseTable->GetRowNames();
-			FName RandName = Names[FMath::Rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
-			FMonsterSkill* Skill = SecondPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
+			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+			FName RandName = Names[RandomIndex];
+			FST_MyMonsterSkill* Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
 
-			if (IsValid(Skill->AnimMontage))
+			if (IsValid(Skill->SkillAnimMontage))
 			{
-				AttackMontage = Skill->AnimMontage;
+				AttackMontage = Skill->SkillAnimMontage;
 				PlayAnimMontage(AttackMontage, 1.2f);
 
 				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
@@ -353,12 +355,13 @@ void AWyvernCharacter::BattleTickOnThirdPhase()
 		if (IsValid(ThirdPhaseTable))
 		{
 			TArray<FName> Names = ThirdPhaseTable->GetRowNames();
-			FName RandName = Names[FMath::Rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
-			FMonsterSkill* Skill = ThirdPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
+			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+			FName RandName = Names[RandomIndex];
+			FST_MyMonsterSkill* Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
 
-			if (IsValid(Skill->AnimMontage))
+			if (IsValid(Skill->SkillAnimMontage))
 			{
-				AttackMontage = Skill->AnimMontage;
+				AttackMontage = Skill->SkillAnimMontage;
 				PlayAnimMontage(AttackMontage, 1.2f);
 
 				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
@@ -420,6 +423,8 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel2));
+	TArray<AActor*> ActorToIgnore;
+	ActorToIgnore.Add(this);
 
 	FHitResult OutHit;
 	UKismetSystemLibrary::SphereTraceSingleForObjects(
@@ -429,7 +434,7 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 		250.0f,
 		ObjectTypes,
 		false,
-		TArray<AActor*>(),
+		ActorToIgnore,
 		EDrawDebugTrace::None,
 		OutHit,
 		true

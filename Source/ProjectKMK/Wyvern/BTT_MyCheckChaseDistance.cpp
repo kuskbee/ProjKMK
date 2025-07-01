@@ -12,16 +12,18 @@ EBTNodeResult::Type UBTT_MyCheckChaseDistance::ExecuteTask(UBehaviorTreeComponen
     Super::ExecuteTask(OwnerComp, NodeMemory);
 
 	APawn* MyPawn = OwnerComp.GetAIOwner()->GetPawn();
-	IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
 
-	AActor* Target = Cast<AActor>(TargetActor.SelectedKeyType);
+	AActor* Target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->
+		GetValueAsObject(TargetActor.SelectedKeyName));
 
-	if (Wyvern && Target)
+	if (Target)
 	{
 		if (Distance < MyPawn->GetDistanceTo(Target))
 		{
+			IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
 			Wyvern->SetAIState(EAIState::Chase);
-			OwnerComp.GetBlackboardComponent()->SetValueAsEnum(TEXT("MonAIState"), (uint8)EAIState::Chase);
+			OwnerComp.GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
+
 			return EBTNodeResult::Failed;
 		}
 		else

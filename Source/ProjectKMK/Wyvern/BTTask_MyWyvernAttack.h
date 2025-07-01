@@ -19,6 +19,5 @@ public:
 	UFUNCTION()
 	void OnAttackEnd();
 
-	UPROPERTY(EditAnywhere, Category = "VALUE", BlueprintReadWrite)
 	TObjectPtr<APawn> ControlledPawn;
 };
