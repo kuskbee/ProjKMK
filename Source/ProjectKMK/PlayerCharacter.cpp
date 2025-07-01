@@ -17,6 +17,7 @@
 #include "Weapon/WeaponBase.h"
 #include "StatusComponent.h"
 #include "Player/TargetingSystemComponent.h"
+#include "Interfaces/TailInterface.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -159,6 +160,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		UEIC->BindAction(IA_DashAttack, ETriggerEvent::Started, this, &APlayerCharacter::OnDashAttack);
 		UEIC->BindAction(IA_LockOn, ETriggerEvent::Started, this, &APlayerCharacter::OnLockOn);
 		UEIC->BindAction(IA_Dodge, ETriggerEvent::Started, this, &APlayerCharacter::OnDodge);
+		UEIC->BindAction(IA_Hold, ETriggerEvent::Started, this, &APlayerCharacter::OnHold);
 	}
 
 }
@@ -270,6 +272,77 @@ void APlayerCharacter::OnDodge(const FInputActionValue& Value)
 		EchoState = EPlayerState::EPS_Dodge;
 	}
 }
+
+void APlayerCharacter::OnHold(const FInputActionValue& Value)
+{
+	if (!IsValid(HoldTailClass) || !IsValid(TailClass))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Warning] HoldTail or SpawnTail Class Unknown"));
+		return;
+	}
+
+	if (false == IsValid(HoldTail))
+	{
+		TArray<AActor*> OverlappingTails;
+		GetOverlappingActors(OverlappingTails, TailClass);
+
+		if (OverlappingTails.Num() > 0)
+		{
+			IsHold = true;
+
+			float Distance = 0.f;
+			FVector PlayerLoc = GetActorLocation();
+			AActor* Tail = UGameplayStatics::FindNearestActor(PlayerLoc, OverlappingTails, Distance);
+			if (IsValid(Tail))
+			{
+				Tail->Destroy();
+
+				FTransform SpawnTransform = GetMesh()->GetSocketTransform(FName(TEXT("holdsocket")), RTS_World);
+				HoldTail = GetWorld()->SpawnActorDeferred<AActor>(
+					HoldTailClass,
+					SpawnTransform,
+					this,
+					this,
+					ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+				);
+				
+				if (HoldTail)
+				{
+					UGameplayStatics::FinishSpawningActor(HoldTail, SpawnTransform);
+					HoldTail->AttachToComponent(
+						GetMesh(),
+						FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
+						FName(TEXT("holdsocket"))
+					);
+				}
+
+				if (IsValid(EquippedWeapon))
+				{
+					EquippedWeapon->WeaponMesh->SetVisibility(false);
+				}
+			}
+		}
+	}
+	else
+	{
+		IsHold = false;
+
+		FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepWorld, true);
+
+		HoldTail->DetachFromActor(DetachmentRules);
+		if (HoldTail->GetClass()->ImplementsInterface(UTailInterface::StaticClass()))
+		{
+			ITailInterface::Execute_OnDrop(HoldTail); // 블루프린트에 정의
+		}
+
+		HoldTail = nullptr;
+		if (IsValid(EquippedWeapon))
+		{
+			EquippedWeapon->WeaponMesh->SetVisibility(true);
+		}
+	}
+}
+
 
 bool APlayerCharacter::IsMovable()
 {
@@ -502,13 +575,13 @@ void APlayerCharacter::SpawnWeapon()
 
 		if (EquippedWeapon)
 		{
+			UGameplayStatics::FinishSpawningActor(EquippedWeapon, SpawnTransform);
 			EquippedWeapon->OwnerCharacter = this;
 			EquippedWeapon->AttachToComponent(
 				GetMesh(),
 				FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
 				FName(TEXT("weapon"))
 			);
-			UGameplayStatics::FinishSpawningActor(EquippedWeapon, SpawnTransform);
 		}
 	}
 }

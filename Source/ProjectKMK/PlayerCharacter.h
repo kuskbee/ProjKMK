@@ -63,6 +63,7 @@ protected:
 	void OnDashAttack(const FInputActionValue& Value);
 	void OnLockOn(const FInputActionValue& Value);
 	void OnDodge(const FInputActionValue& Value);
+	void OnHold(const FInputActionValue& Value);
 		
 	bool IsMovable();
 	void SetLocomotionState();
@@ -160,6 +161,9 @@ public:
 	TObjectPtr<UInputAction> IA_Dodge;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> IA_Hold;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> IMC_Default;
 
 	UPROPERTY(EditAnywhere, Category = "State", BlueprintReadOnly)
@@ -229,6 +233,16 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "TargetSystem")
 	ETargetingMode CurrentTargetingMode;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HoldTail")
+	TSubclassOf<AActor> HoldTailClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HoldTail")
+	TSubclassOf<AActor> TailClass;
+
+	UPROPERTY(VisibleAnywhere, Category = "HoldTail")
+	TObjectPtr<AActor> HoldTail;
+
 
 public:
 	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }
