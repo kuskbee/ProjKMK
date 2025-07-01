@@ -2,6 +2,8 @@
 
 
 #include "StatusComponent.h"
+#include "UI/MyHUD.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values for this component's properties
 UStatusComponent::UStatusComponent()
@@ -29,7 +31,12 @@ void UStatusComponent::TakeDamage(float Damage)
 	{
 		OnDead.Broadcast();
 
-		//:HUD: ChangeGameState Lose
+		AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
+
+		if (LocalHud)
+		{
+			LocalHud->EventChangeGameState(EGameState::EGS_Lose);
+		}
 	}
 }
 

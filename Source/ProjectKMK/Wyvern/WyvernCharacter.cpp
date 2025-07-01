@@ -18,6 +18,7 @@
 #include "MyMonAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "../PlayerCharacter.h"
+#include "../UI/MyHUD.h"
 
 // Sets default values
 AWyvernCharacter::AWyvernCharacter()
@@ -554,6 +555,13 @@ void AWyvernCharacter::DoDeath()
 		{
 			MonAIState = EAIState::Dead;
 			PlayAnimMontage(DeadMontage);
+
+			AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
+		
+			if (LocalHud)
+			{
+				LocalHud->EventChangeGameState(EGameState::EGS_Win);
+			}
 		}
 
 		break;
