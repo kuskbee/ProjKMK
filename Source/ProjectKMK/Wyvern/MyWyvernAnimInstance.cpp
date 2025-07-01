@@ -23,11 +23,15 @@ void UMyWyvernAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	if (IsValid(Character))
 	{
+		MovementComponent = Character->GetCharacterMovement();
+
 		Velocity = MovementComponent->Velocity;
 		GroundSpeed = Velocity.Size2D();
 
-		bShouldMove = MovementComponent->GetCurrentAcceleration().Size() != 0 && GroundSpeed > 3.0f;
+		FVector AccelVector = MovementComponent->GetCurrentAcceleration();
 
+		//bShouldMove = MovementComponent->GetCurrentAcceleration().Size() != 0 && GroundSpeed > 3.0f;
+		bShouldMove = GroundSpeed > 3.0f;
 
 		bIsFalling = MovementComponent->IsFalling();
 

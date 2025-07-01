@@ -30,7 +30,7 @@ EBTNodeResult::Type UBTT_MyWyvernPatrol::ExecuteTask(UBehaviorTreeComponent& Own
 		{
 			FAIMoveRequest MoveRequest;
 			MoveRequest.SetGoalLocation(RandLocation);
-			MoveRequest.SetAcceptanceRadius(5.0f);
+			MoveRequest.SetAcceptanceRadius(PatrolRadius);
 
 			FNavPathSharedPtr NavPath;
 			EPathFollowingRequestResult::Type Result = OwnerComp.GetAIOwner()->MoveTo(MoveRequest, &NavPath);

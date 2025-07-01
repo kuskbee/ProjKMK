@@ -295,7 +295,8 @@ void AWyvernCharacter::BattleTickOnFirstPhase()
 		if (IsValid(FirstPhaseTable))
 		{
 			TArray<FName> Names = FirstPhaseTable->GetRowNames();
-			FName RandName = Names[FMath::Rand() % Names.Num()]; // 이거 필시 문제생길듯 ㄷㄷ
+			int RandomIndex = FMath::Clamp(FMath::Rand(), 0, Names.Num() - 1);
+			FName RandName = Names[RandomIndex];
 			FMonsterSkill* Skill = FirstPhaseTable->FindRow<FMonsterSkill>(RandName, RandName.ToString());
 
 			if (IsValid(Skill->AnimMontage))

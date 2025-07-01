@@ -18,15 +18,14 @@ EBTNodeResult::Type UBTT_MyCheckBattleDistance::ExecuteTask(UBehaviorTreeCompone
 
 	if (Target)
 	{
-		
-		UE_LOG(LogTemp, Warning, TEXT("%f"), MyPawn->GetDistanceTo(Target));
 		if (MyPawn->GetDistanceTo(Target) <= Distance)
 		{
+			//UE_LOG(LogTemp, Warning, TEXT("%f"), Distance);
 			IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
 
 			Wyvern->SetAIState(EAIState::Battle);
 
-			OwnerComp.GetBlackboardComponent()->SetValueAsEnum(TEXT("MonAIState"), (uint8) EAIState::Battle);
+			OwnerComp.GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Battle));
 			
 			return EBTNodeResult::Failed;
 		}
