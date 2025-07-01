@@ -10,6 +10,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "../PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "../UI/MyHUD.h"
 
 AMyMonAIController::AMyMonAIController()
 {
@@ -110,22 +111,20 @@ void AMyMonAIController::ChasePlayer(AActor* Actor)
 }
 
 
-// Need MyHud class Please HanJoon NIM;
 void AMyMonAIController::ShowMonsterHealthBar()
 {
-	//AMyHUD* MyHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
+	AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
 
-	//if (MyHud)
-	//{
-	//	if (!MyHud->IsShowHealthBar)
-	//	{
-	//		MyHud->ShowMonsterHealthBar();
-	//		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(K2_GetPawn());
-	//		if (WyvernCharacter)
-	//		{
-	//			MyHud->BindWyvernEvent(WyvernCharacter);
-	//		}
-	//	}
-	//}
-	
+	if (LocalHud)
+	{
+		if (!LocalHud->IsShowHealthBar)
+		{
+			LocalHud->ShowMonsterHealthBar();
+			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(K2_GetPawn());
+			if (WyvernCharacter)
+			{
+				LocalHud->BindWyvernEvent(WyvernCharacter);
+			}
+		}
+	}
 }
