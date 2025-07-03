@@ -35,9 +35,6 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UAIPerceptionComponent> AIPerception;
 
-	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
-	FEventDispatcher_ChangeMonAIState EventDispatcher_ChangeMonAIState;
-
 	UPROPERTY(VisibleAnywhere, Category = "State", BlueprintReadOnly)
 	EAIState AIState;
 
@@ -45,10 +42,10 @@ public:
 	void ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
 	UFUNCTION()
-	void UpdateMonState();
+	void ProcessPerceptionForgetUpdated(AActor* Actor);
 
 	UFUNCTION()
-	void ChasePlayer(AActor* Actor);
+	void FindDamageCauser(AActor* DamageCauser);
 
 	UFUNCTION()
 	void ShowMonsterHealthBar();

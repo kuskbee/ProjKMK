@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/Tasks/BTTask_BlackboardBase.h"
-#include "BehaviorTree/BehaviorTreeTypes.h"
-#include "Navigation\PathFollowingComponent.h"
 #include "BTT_MyWyvernChaseTarget.generated.h"
 
 /**
@@ -19,14 +17,6 @@ public:
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
-	UPROPERTY(EditAnywhere, Category = "Key", BlueprintReadWrite)
-	FBlackboardKeySelector TargetActor;
-
 	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
 	float ChaseSpeed = 500.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
-	float AcceptanceRadius = 300.0f;
-
-
 };

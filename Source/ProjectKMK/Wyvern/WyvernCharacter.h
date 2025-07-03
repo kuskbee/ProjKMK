@@ -80,9 +80,6 @@ public:
 	FEventDispatcherAttackEnd EventAttackEnd;
 
 	UFUNCTION()
-	void EventAITick();
-
-	UFUNCTION()
 	void DoAttack(bool IsRightHand, bool IsMouth);
 
 	UFUNCTION()
@@ -93,9 +90,6 @@ public:
 
 	UFUNCTION()
 	void EventMontageEnd(UAnimMontage* Montage, bool bINterrupted);
-
-	UFUNCTION()
-	void EventUpdateMonAIState(EAIState In_MonAIState);
 
 	UFUNCTION()
 	void EventUpdateMonPhase(EPhase In_Phase);

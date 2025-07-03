@@ -7,49 +7,31 @@
 #include "AIController.h"
 #include "WyvernCharacter.h"
 #include "NavigationSystem.h"
-#include "Navigation\PathFollowingComponent.h"
 
 
 EBTNodeResult::Type UBTT_MyWyvernPatrol::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
     Super::ExecuteTask(OwnerComp, NodeMemory);
 
-	AWyvernCharacter* WyvernChar = Cast< AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
 
 	if (WyvernChar)
 	{
 		WyvernChar->UpdateWalkSpeed(PatrolSpeed);
 
-		FNavLocation RandLocation;
+		FNavLocation RandomLocation;
 		UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
 
 		if (NavSys && NavSys->GetRandomReachablePointInRadius(
 			WyvernChar->GetActorLocation(),
 			PatrolRadius,
-			RandLocation))
+			RandomLocation))
 		{
-			FAIMoveRequest MoveRequest;
-			MoveRequest.SetGoalLocation(RandLocation);
-			MoveRequest.SetAcceptanceRadius(PatrolRadius);
-
-			FNavPathSharedPtr NavPath;
-			EPathFollowingRequestResult::Type Result = OwnerComp.GetAIOwner()->MoveTo(MoveRequest, &NavPath);
-
-			if (Result == EPathFollowingRequestResult::RequestSuccessful)
-			{
-				return EBTNodeResult::Succeeded;
-			}
-			else
-			{
-				return EBTNodeResult::Failed;
-			}
-
-
-		}
-		else
-		{
-			return EBTNodeResult::Failed;
+			OwnerComp.GetBlackboardComponent()->SetValueAsVector(FName(TEXT("NextPatrolPoint")),
+				RandomLocation);
+			return EBTNodeResult::Succeeded;
 		}
 	}
+
     return EBTNodeResult::Failed;
 }

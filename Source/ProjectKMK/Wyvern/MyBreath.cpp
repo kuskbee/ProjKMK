@@ -67,8 +67,10 @@ void AMyBreath::BreathDamage()
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(GetInstigator());
 
+
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+
 
 	FHitResult OutHit;
 	UKismetSystemLibrary::CapsuleTraceSingleForObjects(

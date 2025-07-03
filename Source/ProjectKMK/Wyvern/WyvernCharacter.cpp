@@ -27,8 +27,8 @@ AWyvernCharacter::AWyvernCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetMesh()->AddRelativeLocation(FVector(0.0f, 0.0f, -500.0f));
 	GetMesh()->SetWorldScale3D(FVector(0.3f, 0.3f, 0.3f));
+	GetMesh()->SetWorldLocation(FVector(0.0f, 0.0f, -500.0f));
 
 	GetCapsuleComponent()->SetCapsuleSize(500.0f, 500.0f);
 	GetCapsuleComponent()->SetWorldScale3D(FVector(0.7f, 0.7f, 0.7f));
@@ -37,7 +37,7 @@ AWyvernCharacter::AWyvernCharacter()
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 
 	SpringArm->AddRelativeLocation(FVector(-3.158533, 25.579432, -52.963234));
-	SpringArm->AddRelativeRotation(FRotator(-20.0f, -90.0f, 0.0f));
+	SpringArm->AddRelativeRotation(FRotator(-20.0f, 0.0f, 0.0f));
 	SpringArm->TargetArmLength = 1200.0f;
 
 	SpringArm->bInheritPitch = true;
@@ -50,6 +50,12 @@ AWyvernCharacter::AWyvernCharacter()
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
 
 	MonStateComponent = CreateDefaultSubobject<UMonStateComponent>(TEXT("MonStateComponent"));
+
+	bUseControllerRotationYaw = false;
+
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 180.0f, 0.f);
 }
 
 // Called when the game starts or when spawned
@@ -73,8 +79,6 @@ void AWyvernCharacter::BeginPlay()
 void AWyvernCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	EventAITick();
 	
 	if (MonAIState == EAIState::Runaway)
 	{
@@ -109,6 +113,7 @@ void AWyvernCharacter::PossessedBy(AController* NewController)
 
 bool AWyvernCharacter::Attack()
 {
+	
 	switch (Phase)
 	{
 	case EPhase::FirstPhase:
@@ -262,13 +267,9 @@ void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
 	IsPlayMontage = false;
 	if (Montage == AttackMontage)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("EventMontageEnd"));
 		EventAttackEnd.Broadcast();
 	}
-}
-
-void AWyvernCharacter::EventUpdateMonAIState(EAIState In_MonAIState)
-{
-	MonAIState = In_MonAIState;
 }
 
 void AWyvernCharacter::EventUpdateMonPhase(EPhase In_Phase)
@@ -280,11 +281,27 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 	AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, 
 	const UDamageType* DamageType, AActor* DamageCauser)
 {
-	AMyMonAIController* MonController = Cast< AMyMonAIController>(GetController());
-	if (MonController)
+	if (MonAIState == EAIState::Patrol)
 	{
-		MonController->ChasePlayer(InstigatedBy->GetPawn());
+		AMyMonAIController* MonController = Cast< AMyMonAIController>(GetController());
+		if (MonController)
+		{
+			MonController->FindDamageCauser(DamagedActor);
+//			나중에 BT 전부 완성되면 ShowMonsterHealthBar() 를 WyvernCharacter 쪽으로 옮길거임
+//			if (Phase == EPhase::ThirdPhase)
+//			{
+//				ShowMonsterHealthBar();
+//			}
+			//MonController->ChasePlayer(InstigatedBy->GetPawn());
+		}
 	}
+//		if (WyvernCharacter->MonAIState != EAIState::Battle)
+//		{
+//			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
+//			BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8 (EAIState::Chase));
+//			WyvernCharacter->MonAIState = EAIState::Chase;
+//
+//		}
 
 	MonStateComponent->AddDamage(In_Damage, BoneName, Phase);
 
@@ -308,6 +325,7 @@ void AWyvernCharacter::BattleTickOnFirstPhase()
 
 				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
 				{
+					//UE_LOG(LogTemp, Warning, TEXT("Is Play AttackMontage"));
 					IsPlayMontage = true;
 				}
 				else
@@ -377,29 +395,6 @@ void AWyvernCharacter::BattleTickOnThirdPhase()
 	}
 }
 
-void AWyvernCharacter::EventAITick()
-{
-	//switch (MonAIState)
-	//{
-	//case EAIState::Battle:
-	//	switch (Phase)
-	//	{
-	//	case EPhase::FirstPhase:
-	//		BattleTickOnFirstPhase();
-	//		break;
-	//	case EPhase::SecondPhase:
-	//		BattleTickOnSecondPhase();
-	//		break;
-	//	case EPhase::ThirdPhase:
-	//		BattleTickOnThirdPhase();
-	//		break;
-	//	}
-	//	break;
-	//default:
-	//	break;
-	//}
-}
-
 void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 {
 	FVector AttackLocation;
@@ -422,7 +417,7 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel2));
+
 	TArray<AActor*> ActorToIgnore;
 	ActorToIgnore.Add(this);
 
@@ -482,9 +477,6 @@ void AWyvernCharacter::InitAI(UObject* In_Controller)
 
 	if (MonAIController)
 	{
-		MonAIController->EventDispatcher_ChangeMonAIState.AddDynamic(this,
-			&AWyvernCharacter::EventUpdateMonAIState);
-
 		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this,
 			&AWyvernCharacter::EventMontageEnd);
 	}
@@ -500,10 +492,6 @@ bool AWyvernCharacter::IsMonsterMovable()
 	bool IsMovable = false;
 	switch (MonAIState)
 	{
-	case(EAIState::None):
-		IsMovable = true;
-		break;
-
 	case(EAIState::Patrol):
 		IsMovable = true;
 		break;
