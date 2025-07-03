@@ -18,6 +18,7 @@
 #include "StatusComponent.h"
 #include "Player/TargetingSystemComponent.h"
 #include "Interfaces/TailInterface.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -74,6 +75,15 @@ APlayerCharacter::APlayerCharacter()
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(APlayerCharacter, EchoState);
+	DOREPLIFETIME(APlayerCharacter, IsHold);
+	DOREPLIFETIME(APlayerCharacter, AttackIndex);
+
+	DOREPLIFETIME(APlayerCharacter, EquippedWeapon);
+	DOREPLIFETIME(APlayerCharacter, AttackTarget);
+	DOREPLIFETIME(APlayerCharacter, HoldTail);
 }
 
 // Called when the game starts or when spawned
@@ -81,22 +91,20 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SpawnWeapon();
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		SpawnWeapon();
+	}
 	BindEventStatusComponent();
 	InitializeTargetSystem();
 }
 
 bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)
 {
-	if (EchoState == EPlayerState::EPS_Dead)
-	{
-		return false;
-	}
+	if (GetLocalRole() != ROLE_Authority) return false;
 
-	if (!IsValid(HitterActor))
-	{
-		return false;
-	}
+	if (EchoState == EPlayerState::EPS_Dead) return false;
+	if (!IsValid(HitterActor)) return false;
 
 	FVector ImpactPoint = HitResult.ImpactPoint;
 	
@@ -117,20 +125,15 @@ bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor
 		UE_LOG(LogTemp, Warning, TEXT("<Normal HitRact>"));
 		ResetWarpTarget();
 	}
+	
+	EchoState = EPlayerState::EPS_HitReact;
 
 	// HitReact Animation 처리
 	FVector HitterLocation = HitterActor->GetActorLocation();
 	FString SectionName = GetSectionNameFromHitDirection(HitterLocation);
-	PlayHitReactMontage(SectionName);
 	
-	if (AttackCameraShake)
-	{
-		UGameplayStatics::PlayWorldCameraShake(GetWorld(), AttackCameraShake,
-			GetActorLocation(), 0.f, 3400.f);
-	}
-
-	// 피격위치로부터 파티클 생성
-	SpawnHitReactEffect(ImpactPoint);
+	Multicast_PlayHitReactMontage(SectionName);
+	Multicast_SpawnHitReactEffectsAndCameraShake(ImpactPoint);
 
 	return true;
 }
@@ -189,6 +192,8 @@ void APlayerCharacter::BindEventStatusComponent()
 
 void APlayerCharacter::DoDeath(bool bIsDeadStatus)
 {
+	if (GetLocalRole() != ROLE_Authority) return;
+	
 	EchoState = EPlayerState::EPS_Dead;
 
 	if (!DeathMontage)
@@ -198,10 +203,8 @@ void APlayerCharacter::DoDeath(bool bIsDeadStatus)
 
 	DeathIndex = FMath::RandRange(0, DeathMontage->GetNumSections() - 1);
 	FName SectionName = DeathMontage->GetSectionName(DeathIndex);
-	PlayDeathMontage(SectionName);
-
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	Multicast_PlayDeathMontage(SectionName);
 }
 
 void APlayerCharacter::OnMove(const FInputActionValue& Value)
@@ -243,19 +246,17 @@ void APlayerCharacter::OnStopJump(const FInputActionValue& Value)
 
 void APlayerCharacter::OnNormalAttack(const FInputActionValue& Value)
 {
-	bool bIsCanAttack = IsCanAttack();
-	if (bIsCanAttack)
+	if (IsCanAttack())
 	{
-		ActiveAttack(false);
+		Server_PerformAttack(false);
 	}
 }
 
 void APlayerCharacter::OnDashAttack(const FInputActionValue& Value)
 {
-	bool bIsCanAttack = IsCanAttack();
-	if (bIsCanAttack)
+	if (IsCanAttack())
 	{
-		ActiveAttack(true);
+		Server_PerformAttack(true);
 	}
 }
 
@@ -276,12 +277,70 @@ void APlayerCharacter::OnDodge(const FInputActionValue& Value)
 {
 	if (IsCanPlayMontage())
 	{
-		PlayDodgeMontage();
-		EchoState = EPlayerState::EPS_Dodge;
+		Server_PerformDodge();
 	}
 }
 
 void APlayerCharacter::OnHold(const FInputActionValue& Value)
+{
+	Server_ToggleHold();
+}
+
+void APlayerCharacter::Server_PerformAttack_Implementation(bool bIsDash)
+{
+	if (!IsCanAttack()) return;
+
+	if (bIsDash)
+	{
+		GetAttackTargetActor();
+		if (AttackTarget)
+		{
+			SetWarpTarget();
+		}
+		else
+		{
+			ResetWarpTarget();
+		}
+	}
+	else
+	{
+		ResetWarpTarget();
+	}
+
+	EchoState = EPlayerState::EPS_Attack;
+	IncreaseAttackIndex();
+
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->SetWeaponCollisionEnable(true);
+	}
+
+	Multicast_PlayAttackMontage(bIsDash);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::Server_OnAttackMontageEnded);
+	}
+}
+
+bool APlayerCharacter::Server_PerformAttack_Validate(bool bIsDash)
+{
+	return IsCanAttack();
+}
+
+void APlayerCharacter::Server_PerformDodge_Implementation()
+{
+	EchoState = EPlayerState::EPS_Dodge;
+	Multicast_PlayDodgeMontage();
+}
+
+bool APlayerCharacter::Server_PerformDodge_Validate()
+{
+	return IsCanPlayMontage();
+}
+
+void APlayerCharacter::Server_ToggleHold_Implementation()
 {
 	if (!IsValid(HoldTailClass) || !IsValid(TailClass))
 	{
@@ -313,7 +372,7 @@ void APlayerCharacter::OnHold(const FInputActionValue& Value)
 					this,
 					ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 				);
-				
+
 				if (HoldTail)
 				{
 					UGameplayStatics::FinishSpawningActor(HoldTail, SpawnTransform);
@@ -322,11 +381,6 @@ void APlayerCharacter::OnHold(const FInputActionValue& Value)
 						FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
 						FName(TEXT("holdsocket"))
 					);
-				}
-
-				if (IsValid(EquippedWeapon))
-				{
-					EquippedWeapon->WeaponMesh->SetVisibility(false);
 				}
 			}
 		}
@@ -344,13 +398,141 @@ void APlayerCharacter::OnHold(const FInputActionValue& Value)
 		}
 
 		HoldTail = nullptr;
-		if (IsValid(EquippedWeapon))
-		{
-			EquippedWeapon->WeaponMesh->SetVisibility(true);
-		}
 	}
 }
 
+bool APlayerCharacter::Server_ToggleHold_Validate()
+{
+	return true;
+}
+
+void APlayerCharacter::OnRep_EchoState()
+{
+	switch (EchoState)
+	{
+	case EPlayerState::EPS_Dead:
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+	case EPlayerState::EPS_Attack:
+		break;
+	case EPlayerState::EPS_Dodge:
+		break;
+	case EPlayerState::EPS_Locomotion:
+		break;
+	case EPlayerState::EPS_HitReact:
+		break;
+	}
+}
+
+void APlayerCharacter::OnRep_IsHold()
+{
+	if (IsValid(EquippedWeapon))
+	{
+		EquippedWeapon->WeaponMesh->SetVisibility(!IsHold);
+	}
+	if (IsValid(HoldTail))
+	{
+		HoldTail->SetActorHiddenInGame(!IsHold);
+	}
+}
+
+void APlayerCharacter::OnRep_AttackIndex()
+{
+}
+
+void APlayerCharacter::Multicast_PlayAttackMontage_Implementation(bool bIsDash)
+{
+	UnbindEventAttackMontageEnd();
+
+	UAnimMontage* AttackMontageToPlay;
+	if (bIsDash)
+	{
+		AttackMontageToPlay = DashAttackMontage;
+	}
+	else
+	{
+		AttackMontageToPlay = NormalAttackMontage;
+	}
+
+	FName Section = FName(*FString::Printf(TEXT("Attack%d"), AttackIndex));
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AttackMontageToPlay)
+	{
+		AnimInstance->Montage_Play(AttackMontageToPlay);
+		AnimInstance->Montage_JumpToSection(Section, AttackMontageToPlay);
+
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventAttackMontageEnd);
+	}
+}
+
+void APlayerCharacter::Multicast_PlayHitReactMontage_Implementation(const FString& SectionName)
+{
+	UnbindEventHitReactMontageEnd();
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		AnimInstance->Montage_JumpToSection(FName(SectionName), HitReactMontage);
+
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventHitReactMontageEnd);
+	}
+}
+
+void APlayerCharacter::Multicast_PlayDodgeMontage_Implementation()
+{
+	UnbindEventDodgeMontageEnd();
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DodgeMontage)
+	{
+		AnimInstance->Montage_Play(DodgeMontage);
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventDodgeMontageEnd);
+	}
+}
+
+void APlayerCharacter::Multicast_PlayDeathMontage_Implementation(FName SectionName)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, DeathMontage);
+	}
+}
+
+
+void APlayerCharacter::Multicast_SpawnHitReactEffectsAndCameraShake_Implementation(FVector Location)
+{
+	if (HitReactEffect) {
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, HitReactEffect, Location);
+	}
+	if (AttackCameraShake)
+	{
+		UGameplayStatics::PlayWorldCameraShake(GetWorld(), AttackCameraShake,
+			GetActorLocation(), 0.f, 3400.f);
+	}
+}
+
+void APlayerCharacter::Server_OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage != NormalAttackMontage && Montage != DashAttackMontage) return;
+
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->SetWeaponCollisionEnable(false);
+	}
+
+	EchoState = EPlayerState::EPS_Locomotion;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::Server_OnAttackMontageEnded);
+	}
+}
 
 bool APlayerCharacter::IsMovable()
 {
@@ -371,38 +553,9 @@ bool APlayerCharacter::IsMovable()
 	return bIsMovable;
 }
 
-void APlayerCharacter::SetLocomotionState()
-{
-	EchoState = EPlayerState::EPS_Locomotion;
-}
-
 bool APlayerCharacter::IsCanAttack()
 {
 	return IsCanPlayMontage() && !IsHold;
-}
-
-void APlayerCharacter::ActiveAttack(bool bIsDash)
-{
-	if (bIsDash)
-	{
-		GetAttackTargetActor();
-	}
-
-	if (bIsDash && AttackTarget)
-	{
-		SetWarpTarget();
-
-		PlayAttackMontage(true);
-	}
-	else // Normal
-	{
-		ResetWarpTarget();
-
-		PlayAttackMontage(false);
-	}
-
-	IncreaseAttackIndex();
-	EchoState = EPlayerState::EPS_Attack;
 }
 
 uint32 APlayerCharacter::IncreaseAttackIndex()
@@ -594,44 +747,11 @@ void APlayerCharacter::SpawnWeapon()
 	}
 }
 
-void APlayerCharacter::SpawnHitReactEffect(FVector Location)
-{
-	if (HitReactEffect) {
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, HitReactEffect, Location);
-	}
-}
-
 bool APlayerCharacter::IsCanPlayMontage()
 {
 	bool IsPlayingMontage = GetMesh()->GetAnimInstance()->IsAnyMontagePlaying();
 	bool IsLocomotion = EchoState == EPlayerState::EPS_Locomotion;
 	return !IsPlayingMontage && IsLocomotion;
-}
-
-void APlayerCharacter::PlayAttackMontage(bool bIsDash)
-{
-	UnbindEventAttackMontageEnd();
-
-	UAnimMontage* AttackMontage;
-	if (bIsDash)
-	{
-		AttackMontage = DashAttackMontage;
-	}
-	else
-	{
-		AttackMontage = NormalAttackMontage;
-	}
-
-	FName Section = FName(*FString::Printf(TEXT("Attack%d"), AttackIndex));
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && AttackMontage)
-	{
-		AnimInstance->Montage_Play(AttackMontage);
-		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
-
-		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventAttackMontageEnd);
-	}
 }
 
 void APlayerCharacter::UnbindEventAttackMontageEnd()
@@ -643,48 +763,12 @@ void APlayerCharacter::UnbindEventAttackMontageEnd()
 	}
 }
 
-void APlayerCharacter::PlayHitReactMontage(FString SectionName)
-{
-	UnbindEventHitReactMontageEnd();
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (HitReactMontage)
-	{
-		AnimInstance->Montage_Play(HitReactMontage);
-		AnimInstance->Montage_JumpToSection(FName(SectionName), HitReactMontage);
-
-		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventHitReactMontageEnd);
-	}
-}
-
 void APlayerCharacter::UnbindEventHitReactMontageEnd()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance)
 	{
 		AnimInstance->OnMontageEnded.RemoveDynamic(this, &APlayerCharacter::EventHitReactMontageEnd);
-	}
-}
-
-void APlayerCharacter::PlayDeathMontage(FName SectionName)
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && DeathMontage)
-	{
-		AnimInstance->Montage_Play(DeathMontage);
-		AnimInstance->Montage_JumpToSection(SectionName, DeathMontage);
-	}
-}
-
-void APlayerCharacter::PlayDodgeMontage()
-{
-	UnbindEventDodgeMontageEnd();
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && DodgeMontage)
-	{
-		AnimInstance->Montage_Play(DodgeMontage);
-		AnimInstance->OnMontageEnded.AddDynamic(this, &APlayerCharacter::EventDodgeMontageEnd);
 	}
 }
 
@@ -699,42 +783,46 @@ void APlayerCharacter::UnbindEventDodgeMontageEnd()
 
 void APlayerCharacter::EventAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage != NormalAttackMontage && Montage != DashAttackMontage)
+	if (Montage != NormalAttackMontage && Montage != DashAttackMontage) return;
+
+	if (GetLocalRole() == ROLE_Authority && EquippedWeapon)
 	{
-		return;
+		if (EquippedWeapon)
+		{
+			EquippedWeapon->SetWeaponCollisionEnable(false);
+		}
+		EchoState = EPlayerState::EPS_Locomotion;
 	}
 
-	EquippedWeapon->SetWeaponCollisionEnable(false);
-	
-	SetLocomotionState();
 	UnbindEventAttackMontageEnd();
 }
 
 void APlayerCharacter::EventHitReactMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage != HitReactMontage)
+	if (Montage != HitReactMontage) return;
+
+	if (GetLocalRole() == ROLE_Authority)
 	{
-		return;
+		EchoState = EPlayerState::EPS_Locomotion;
 	}
 
-	SetLocomotionState();
 	UnbindEventHitReactMontageEnd();
 }
 
 void APlayerCharacter::EventDodgeMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage != DodgeMontage)
+	if (Montage != DodgeMontage) return;
+
+	if (GetLocalRole() == ROLE_Authority)
 	{
-		return;
+		EchoState = EPlayerState::EPS_Locomotion;
 	}
 
-	SetLocomotionState();
 	UnbindEventDodgeMontageEnd();
 }
 
 void APlayerCharacter::InitializeTargetSystem()
 {
-	UE_LOG(LogTemp, Warning, TEXT("[Ctor]Creator TargetingSystem = %p"), TargetingSystem.Get());
 	if (TargetingSystem)
 	{
 		//TargetingSystem->Initialize(this, FollowCamera);
