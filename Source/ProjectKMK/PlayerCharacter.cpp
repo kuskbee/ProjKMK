@@ -66,6 +66,14 @@ APlayerCharacter::APlayerCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	bUseControllerRotationYaw = false;
+
+	bReplicates = true;
+
+	SetReplicateMovement(true);
+}
+
+void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
 }
 
 // Called when the game starts or when spawned
@@ -179,7 +187,7 @@ void APlayerCharacter::BindEventStatusComponent()
 	StatusComponent->OnDead.AddDynamic(this, &APlayerCharacter::DoDeath);
 }
 
-void APlayerCharacter::DoDeath()
+void APlayerCharacter::DoDeath(bool bIsDeadStatus)
 {
 	EchoState = EPlayerState::EPS_Dead;
 

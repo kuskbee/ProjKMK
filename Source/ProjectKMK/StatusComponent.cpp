@@ -2,6 +2,7 @@
 
 
 #include "StatusComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "UI/MyHUD.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -12,31 +13,38 @@ UStatusComponent::UStatusComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
+	SetIsReplicatedByDefault(true);
+
+	MaxHp = 1000.0f;
+	CurHp = MaxHp;
+	bIsDead = false;
 	// ...
+}
+
+void UStatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UStatusComponent, CurHp);
+	DOREPLIFETIME(UStatusComponent, bIsDead);
 }
 
 void UStatusComponent::InitializeStatus()
 {
-	CurHp = MaxHp;
-	UpdateUIHp();
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		CurHp = MaxHp;
+		bIsDead = false;
+
+		OnChangeHp.Broadcast(CurHp, MaxHp);
+	}
 }
 
 void UStatusComponent::TakeDamage(float Damage)
 {
-	CurHp = FMath::Clamp(CurHp - Damage, 0.f, MaxHp);
-	
-	UpdateUIHp();
-
-	if (IsDeath())
+	if (GetOwner() && GetOwner()->HasAuthority())
 	{
-		OnDead.Broadcast();
-
-		AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
-
-		if (LocalHud)
-		{
-			LocalHud->EventChangeGameState(EGameState::EGS_Lose);
-		}
+		SetHp(CurHp - Damage);
 	}
 }
 
@@ -45,9 +53,75 @@ void UStatusComponent::UpdateUIHp()
 	OnChangeHp.Broadcast(CurHp, MaxHp);
 }
 
-bool UStatusComponent::IsDeath()
+void UStatusComponent::SetHp(float NewHp)
 {
-	return (CurHp <= 0.f);
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		float OldHp = CurHp;
+		CurHp = FMath::Clamp(NewHp, 0.f, MaxHp);
+
+		if (CurHp != OldHp)
+		{
+			OnChangeHp.Broadcast(CurHp, MaxHp);
+		}
+
+		if (CalculateIsDead() && !bIsDead)
+		{
+			SetIsDead(true);
+		}
+		else if (!CalculateIsDead() && bIsDead)
+		{
+			SetIsDead(false);
+		}
+	}
+}
+
+void UStatusComponent::SetIsDead(bool bNewDeadStatus)
+{
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		if (bIsDead != bNewDeadStatus)
+		{
+			bIsDead = bNewDeadStatus;
+			OnDead.Broadcast(bIsDead);
+
+			if (bIsDead)
+			{
+				//DeadStatus
+			}
+			else
+			{
+				//Revive
+			}
+		}
+	}
+}
+
+void UStatusComponent::OnRep_CurHp()
+{
+	UpdateUIHp();
+}
+
+void UStatusComponent::OnRep_IsDead()
+{
+	OnDead.Broadcast(bIsDead);
+
+	if (bIsDead)
+	{
+		if (APawn* OwningPawn = Cast<APawn>(GetOwner()))
+		{
+			if (OwningPawn->IsLocallyControlled())
+			{
+				if (APlayerController* LocalPlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+				{
+					if (AMyHUD* LocalHud = Cast<AMyHUD>(LocalPlayerController->GetHUD()))
+					{
+						LocalHud->EventChangeGameState(EGameState::EGS_Lose);
+					}
+				}
+			}
+		}
+	}
 }
 
 // Called when the game starts
@@ -55,5 +129,12 @@ void UStatusComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializeStatus();
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		InitializeStatus();
+	}
+	else
+	{
+		UpdateUIHp();
+	}
 }

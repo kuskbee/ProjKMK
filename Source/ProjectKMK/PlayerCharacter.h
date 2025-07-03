@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Net/UnrealNetwork.h"
 #include "InputActionValue.h"
 #include "CharacterTypes.h"
 #include "Interfaces/CombatReactInterface.h"
@@ -30,6 +31,8 @@ public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -52,7 +55,7 @@ protected:
 	void BindEventStatusComponent();
 
 	UFUNCTION()
-	void DoDeath();
+	void DoDeath(bool bIsDeadStatus);
 
 	// Input Event Function
 	void OnMove(const FInputActionValue& Value);
@@ -166,13 +169,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> IMC_Default;
 
-	UPROPERTY(EditAnywhere, Category = "State", BlueprintReadOnly)
+	UPROPERTY(/*ReplicatedUsing = OnRep_EchoState, */EditAnywhere, Category = "State", BlueprintReadOnly)
 	EPlayerState EchoState = EPlayerState::EPS_Locomotion;
 
-	UPROPERTY(VisibleAnywhere, Category = "State", BlueprintReadOnly)
+	UPROPERTY(/*ReplicatedUsing = OnRep_IsHold, */VisibleAnywhere, Category = "State", BlueprintReadOnly)
 	bool IsHold;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	UPROPERTY(/*ReplicatedUsing = OnRep_AttackIndex,*/ EditDefaultsOnly, Category = "Combat")
 	int32 AttackIndex = 0;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
@@ -211,7 +214,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Combat | Knockback")
 	float KnockbackChance = 0.7f;
 
-	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Combat | Dash")
 	TObjectPtr<AActor> AttackTarget;
 
 	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
@@ -242,7 +245,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "HoldTail")
 	TObjectPtr<AActor> HoldTail;
-
 
 public:
 	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }
