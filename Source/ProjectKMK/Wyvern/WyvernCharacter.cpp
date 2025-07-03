@@ -113,30 +113,60 @@ void AWyvernCharacter::PossessedBy(AController* NewController)
 
 bool AWyvernCharacter::Attack()
 {
-	
-	switch (Phase)
+	if (!IsPlayMontage)
 	{
-	case EPhase::FirstPhase:
-		BattleTickOnFirstPhase();
-		break;
-	case EPhase::SecondPhase:
-		BattleTickOnSecondPhase();
-		break;
-	case EPhase::ThirdPhase:
-		BattleTickOnThirdPhase();
-		break;
-	default:
-		break;
+		float InPlayRate = 1.0f;
+		UDataTable* SkillDataTable = nullptr;
+
+		switch (Phase)
+		{
+		case EPhase::FirstPhase:
+			if (FirstPhaseTable) {
+				InPlayRate = 1.2f;
+				SkillDataTable = FirstPhaseTable;
+			}
+			break;
+		case EPhase::SecondPhase:
+			if (SecondPhaseTable)
+			{
+				InPlayRate = 1.2f;
+				SkillDataTable = SecondPhaseTable;
+			}
+			break;
+		case EPhase::ThirdPhase:
+			if (ThirdPhaseTable)
+			{
+				InPlayRate = 1.4f;
+				SkillDataTable = ThirdPhaseTable;
+			}
+			break;
+		}
+
+		if (SkillDataTable)
+		{
+			TArray<FName> Names = SkillDataTable->GetRowNames();
+			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+			FName RandName = Names[RandomIndex];
+			FST_MyMonsterSkill* Skill = SkillDataTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+
+			if (IsValid(Skill->SkillAnimMontage))
+			{
+				AttackMontage = Skill->SkillAnimMontage;
+				PlayAnimMontage(AttackMontage, 1.2f);
+
+				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
+				{
+					IsPlayMontage = true;
+				}
+				else
+				{
+					EventMontageEnd(AttackMontage, false);
+				}
+			}
+		}
 	}
 
 	return true;
-}
-
-bool AWyvernCharacter::SetAIState(EAIState AIState)
-{
-	MonAIState = AIState;
-
-	return false;
 }
 
 bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
@@ -267,7 +297,7 @@ void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
 	IsPlayMontage = false;
 	if (Montage == AttackMontage)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("EventMontageEnd"));
+
 		EventAttackEnd.Broadcast();
 	}
 }
@@ -305,94 +335,6 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 
 	MonStateComponent->AddDamage(In_Damage, BoneName, Phase);
 
-}
-
-void AWyvernCharacter::BattleTickOnFirstPhase()
-{
-	if (!IsPlayMontage)
-	{
-		if (IsValid(FirstPhaseTable))
-		{
-			TArray<FName> Names = FirstPhaseTable->GetRowNames();
-			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-			FName RandName = Names[RandomIndex];
-			FST_MyMonsterSkill* Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
-
-			if (IsValid(Skill->SkillAnimMontage))
-			{
-				AttackMontage = Skill->SkillAnimMontage;
-				PlayAnimMontage(AttackMontage, 1.2f);
-
-				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
-				{
-					//UE_LOG(LogTemp, Warning, TEXT("Is Play AttackMontage"));
-					IsPlayMontage = true;
-				}
-				else
-				{
-					EventMontageEnd(AttackMontage, false);
-				}
-			}
-		}
-	}
-}
-
-void AWyvernCharacter::BattleTickOnSecondPhase()
-{
-	if (!IsPlayMontage)
-	{
-		if (IsValid(SecondPhaseTable))
-		{
-			TArray<FName> Names = SecondPhaseTable->GetRowNames();
-			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-			FName RandName = Names[RandomIndex];
-			FST_MyMonsterSkill* Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
-
-			if (IsValid(Skill->SkillAnimMontage))
-			{
-				AttackMontage = Skill->SkillAnimMontage;
-				PlayAnimMontage(AttackMontage, 1.2f);
-
-				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
-				{
-					IsPlayMontage = true;
-				}
-				else
-				{
-					EventMontageEnd(AttackMontage, false);
-				}
-			}
-		}
-	}
-}
-
-void AWyvernCharacter::BattleTickOnThirdPhase()
-{
-	if (!IsPlayMontage)
-	{
-		if (IsValid(ThirdPhaseTable))
-		{
-			TArray<FName> Names = ThirdPhaseTable->GetRowNames();
-			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-			FName RandName = Names[RandomIndex];
-			FST_MyMonsterSkill* Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
-
-			if (IsValid(Skill->SkillAnimMontage))
-			{
-				AttackMontage = Skill->SkillAnimMontage;
-				PlayAnimMontage(AttackMontage, 1.2f);
-
-				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
-				{
-					IsPlayMontage = true;
-				}
-				else
-				{
-					EventMontageEnd(AttackMontage, false);
-				}
-			}
-		}
-	}
 }
 
 void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)

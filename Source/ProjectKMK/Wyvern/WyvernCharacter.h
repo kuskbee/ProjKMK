@@ -71,9 +71,6 @@ public:
 	virtual bool Attack() override;
 
 	UFUNCTION(BlueprintCallable)
-	virtual bool SetAIState(EAIState AIState) override;
-
-	UFUNCTION(BlueprintCallable)
 	virtual bool ApplyHit(FHitResult HitResult, AActor* HitterActor) override;
 
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
@@ -98,16 +95,6 @@ public:
 	void EventProcessTakePointDamage(AActor* DamagedActor, float In_Damage, class AController* InstigatedBy,
 		FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, 
 		const class UDamageType* DamageType, AActor* DamageCauser);
-	
-
-	UFUNCTION()
-	void BattleTickOnFirstPhase();
-
-	UFUNCTION()
-	void BattleTickOnSecondPhase();
-
-	UFUNCTION()
-	void BattleTickOnThirdPhase();
 
 	UFUNCTION()
 	bool IsWeakAttack(FName BoneName);
