@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Net/UnrealNetwork.h"
 #include "InputActionValue.h"
 #include "CharacterTypes.h"
 #include "Interfaces/CombatReactInterface.h"
@@ -30,6 +31,8 @@ public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -52,7 +55,7 @@ protected:
 	void BindEventStatusComponent();
 
 	UFUNCTION()
-	void DoDeath();
+	void DoDeath(bool bIsDeadStatus);
 
 	// Input Event Function
 	void OnMove(const FInputActionValue& Value);
@@ -63,13 +66,57 @@ protected:
 	void OnDashAttack(const FInputActionValue& Value);
 	void OnLockOn(const FInputActionValue& Value);
 	void OnDodge(const FInputActionValue& Value);
-		
+	void OnHold(const FInputActionValue& Value);
+	
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_PerformAttack(bool bIsDash);
+	void Server_PerformAttack_Implementation(bool bIsDash);
+	bool Server_PerformAttack_Validate(bool bIsDash);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_PerformDodge();
+	void Server_PerformDodge_Implementation();
+	bool Server_PerformDodge_Validate();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_ToggleHold();
+	void Server_ToggleHold_Implementation();
+	bool Server_ToggleHold_Validate();
+
+	UFUNCTION()
+	void OnRep_EchoState();
+	UFUNCTION()
+	void OnRep_IsHold();
+	UFUNCTION()
+	void OnRep_AttackIndex();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAttackMontage(bool bIsDash);
+	void Multicast_PlayAttackMontage_Implementation(bool bIsDash);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayHitReactMontage(const FString& SectionName);
+	void Multicast_PlayHitReactMontage_Implementation(const FString& SectionName);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayDodgeMontage();
+	void Multicast_PlayDodgeMontage_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayDeathMontage(FName SectionName);
+	void Multicast_PlayDeathMontage_Implementation(FName SectionName);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnHitReactEffectsAndCameraShake(FVector Location);
+	void Multicast_SpawnHitReactEffectsAndCameraShake_Implementation(FVector Location);
+
+	UFUNCTION()
+	void Server_OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 	bool IsMovable();
-	void SetLocomotionState();
 
 	// Combat
 	bool IsCanAttack();
-	void ActiveAttack(bool bIsDash);
 	uint32 IncreaseAttackIndex();
 	FString GetSectionNameFromHitDirection(FVector HitterLocation);
 	float GetDegreeFromLocation(FVector Location);
@@ -86,17 +133,10 @@ protected:
 	// Weapon
 	void SpawnWeapon();
 
-	// Effect
-	void SpawnHitReactEffect(FVector Location);
-
 	// Montage
 	bool IsCanPlayMontage();
-	void PlayAttackMontage(bool bIsDash);
 	void UnbindEventAttackMontageEnd();
-	void PlayHitReactMontage(FString SectionName);
 	void UnbindEventHitReactMontageEnd();
-	void PlayDeathMontage(FName SectionName);
-	void PlayDodgeMontage();
 	void UnbindEventDodgeMontageEnd();
 
 	UFUNCTION()
@@ -160,15 +200,18 @@ public:
 	TObjectPtr<UInputAction> IA_Dodge;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> IA_Hold;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> IMC_Default;
 
-	UPROPERTY(EditAnywhere, Category = "State", BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing = OnRep_EchoState, EditAnywhere, Category = "State", BlueprintReadOnly)
 	EPlayerState EchoState = EPlayerState::EPS_Locomotion;
 
-	UPROPERTY(VisibleAnywhere, Category = "State", BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing = OnRep_IsHold, VisibleAnywhere, Category = "State", BlueprintReadOnly)
 	bool IsHold;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	UPROPERTY(ReplicatedUsing = OnRep_AttackIndex, EditDefaultsOnly, Category = "Combat")
 	int32 AttackIndex = 0;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
@@ -195,7 +238,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<AWeaponBase> WeaponClass;
 	
-	UPROPERTY(VisibleAnywhere, Category = "Combat", BlueprintReadOnly)
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Combat", BlueprintReadOnly)
 	TObjectPtr<AWeaponBase> EquippedWeapon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
@@ -207,7 +250,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Combat | Knockback")
 	float KnockbackChance = 0.7f;
 
-	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Combat | Dash")
 	TObjectPtr<AActor> AttackTarget;
 
 	UPROPERTY(VisibleAnywhere, Category = "Combat | Dash")
@@ -229,6 +272,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "TargetSystem")
 	ETargetingMode CurrentTargetingMode;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HoldTail")
+	TSubclassOf<AActor> HoldTailClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HoldTail")
+	TSubclassOf<AActor> TailClass;
+
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "HoldTail")
+	TObjectPtr<AActor> HoldTail;
 
 public:
 	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }
