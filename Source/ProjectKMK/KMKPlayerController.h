@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "EnhancedInputSubsystems.h"
 #include "KMKPlayerController.generated.h"
+
 
 /**
  * 
@@ -22,4 +24,8 @@ public:
 	virtual void OnUnPossess() override;
 
 	virtual void BeginPlay() override;
+
+	virtual void OnRep_Pawn() override;
+
+	void SetupEnhanceInput();
 };

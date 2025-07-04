@@ -10,30 +10,11 @@
 
 AKMKPlayerController::AKMKPlayerController()
 {
-
 }
 
 void AKMKPlayerController::OnPossess(APawn* InPawn)
 {
-	Super::OnPossess(InPawn);
-
-	UE_LOG(LogTemp, Warning, TEXT("OnPossess"));
-
-	APlayerCharacter* MyPawn = Cast<APlayerCharacter>(InPawn);
-
-	if (IsValid(MyPawn))
-	{
-		if (ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player))
-		{
-			if (UEnhancedInputLocalPlayerSubsystem* InputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
-			{
-				if (MyPawn->IMC_Default)
-				{
-					InputSystem->AddMappingContext(MyPawn->IMC_Default, 0);
-				}
-			}
-		}
-	}
+	Super::OnPossess(InPawn);		
 }
 
 void AKMKPlayerController::OnUnPossess()
@@ -56,6 +37,36 @@ void AKMKPlayerController::BeginPlay()
 					LocalHUD->BindPlayerEvent(StatusComponent);
 
 					StatusComponent->UpdateUIHp();
+				}
+			}
+		}
+	}
+}
+
+void AKMKPlayerController::OnRep_Pawn()
+{
+	Super::OnRep_Pawn();
+
+	if (IsLocalController())
+	{
+		SetupEnhanceInput();
+	}
+}
+
+void AKMKPlayerController::SetupEnhanceInput()
+{
+	APlayerCharacter* MyPawn = Cast<APlayerCharacter>(GetPawn());
+
+	if (IsValid(MyPawn))
+	{
+		if (ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player))
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* InputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+			{
+				if (MyPawn->IMC_Default)
+				{
+					InputSystem->ClearAllMappings();
+					InputSystem->AddMappingContext(MyPawn->IMC_Default, 0);
 				}
 			}
 		}
