@@ -112,58 +112,55 @@ bool AWyvernCharacter::Attack()
 {
 	if (!IsPlayMontage)
 	{
-		float InPlayRate = 1.0f;
-		UDataTable* SkillDataTable = nullptr;
-
 		switch (Phase)
 		{
 		case EPhase::FirstPhase:
 			if (FirstPhaseTable) {
-				InPlayRate = 1.2f;
-				SkillDataTable = FirstPhaseTable;
+				RandomAttack(FirstPhaseTable, 1.2f);
 			}
 			break;
 		case EPhase::SecondPhase:
 			if (SecondPhaseTable)
 			{
-				InPlayRate = 1.2f;
-				SkillDataTable = SecondPhaseTable;
+				RandomAttack(SecondPhaseTable, 1.2f);
 			}
 			break;
 		case EPhase::ThirdPhase:
 			if (ThirdPhaseTable)
 			{
-				InPlayRate = 1.4f;
-				SkillDataTable = ThirdPhaseTable;
+				RandomAttack(ThirdPhaseTable, 1.4f);
 			}
 			break;
-		}
-
-		if (SkillDataTable)
-		{
-			TArray<FName> Names = SkillDataTable->GetRowNames();
-			int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-			FName RandName = Names[RandomIndex];
-			FST_MyMonsterSkill* Skill = SkillDataTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
-
-			if (IsValid(Skill->SkillAnimMontage))
-			{
-				AttackMontage = Skill->SkillAnimMontage;
-				PlayAnimMontage(AttackMontage, 1.2f);
-
-				if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
-				{
-					IsPlayMontage = true;
-				}
-				else
-				{
-					EventMontageEnd(AttackMontage, false);
-				}
-			}
 		}
 	}
 
 	return true;
+}
+
+void AWyvernCharacter::RandomAttack(UDataTable* SkillDataTable, float InPlayerRate)
+{
+	if (SkillDataTable)
+	{
+		TArray<FName> Names = SkillDataTable->GetRowNames();
+		int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+		FName RandName = Names[RandomIndex];
+		FST_MyMonsterSkill* Skill = SkillDataTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+
+		if (IsValid(Skill->SkillAnimMontage))
+		{
+			AttackMontage = Skill->SkillAnimMontage;
+			PlayAnimMontage(AttackMontage, InPlayerRate);
+
+			if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
+			{
+				IsPlayMontage = true;
+			}
+			else
+			{
+				EventMontageEnd(AttackMontage, false);
+			}
+		}
+	}
 }
 
 bool AWyvernCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)

@@ -70,6 +70,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual bool Attack() override;
 
+	void RandomAttack(UDataTable* SkillDataTable, float InPlayerRate);
+
 	UFUNCTION(BlueprintCallable)
 	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
 
