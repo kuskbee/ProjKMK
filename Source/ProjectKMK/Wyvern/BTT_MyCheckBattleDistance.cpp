@@ -5,36 +5,34 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
-#include "WyvernInterface.h"
+#include "WyvernCharacter.h"
 
 EBTNodeResult::Type UBTT_MyCheckBattleDistance::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	Super::ExecuteTask(OwnerComp, NodeMemory);
 
-	APawn* MyPawn = OwnerComp.GetAIOwner()->GetPawn();
-
 	AActor* Target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->
-		GetValueAsObject(TargetActor.SelectedKeyName));
+		GetValueAsObject(TEXT("TargetActor")));
 
 	if (Target)
 	{
-		if (MyPawn->GetDistanceTo(Target) <= Distance)
-		{
-			IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
+		AWyvernCharacter* Wyvern = Cast<AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
 
-			Wyvern->SetAIState(EAIState::Battle);
-
-			OwnerComp.GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Battle));
-			
-			return EBTNodeResult::Failed;
-		}
-		else
+		if (Wyvern)
 		{
-			return EBTNodeResult::Succeeded;
+			FVector OwnerLocation = Wyvern->GetActorLocation();
+			float Offset = Wyvern->GetDistanceTo(Target);
+
+			if (Offset < Distance)
+			{
+				Wyvern->MonAIState = EAIState::Battle;
+				OwnerComp.GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Battle));
+
+				return EBTNodeResult::Succeeded;
+			}
 		}
+
 	}
-	else
-	{
-		return EBTNodeResult::Succeeded;
-	}
+
+	return EBTNodeResult::Failed;
 }

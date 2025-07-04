@@ -5,31 +5,24 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
-#include "WyvernInterface.h"
+#include "WyvernCharacter.h"
 
 EBTNodeResult::Type UBTT_MyCheckChaseDistance::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
     Super::ExecuteTask(OwnerComp, NodeMemory);
 
-	APawn* MyPawn = OwnerComp.GetAIOwner()->GetPawn();
+	AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
 
-	AActor* Target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->
-		GetValueAsObject(TargetActor.SelectedKeyName));
+	AActor* Target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(FName(TEXT("TargetActor"))));
 
-	if (Target)
+	if (WyvernChar && Target)
 	{
-		if (Distance < MyPawn->GetDistanceTo(Target))
+		if (Distance < WyvernChar->GetDistanceTo(Target))
 		{
-			IWyvernInterface* Wyvern = Cast<IWyvernInterface>(MyPawn);
-			Wyvern->SetAIState(EAIState::Chase);
+			WyvernChar->MonAIState = EAIState::Chase;
 			OwnerComp.GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
-
-			return EBTNodeResult::Failed;
-		}
-		else
-		{
 			return EBTNodeResult::Succeeded;
 		}
 	}
-	return EBTNodeResult::Succeeded;
+	return EBTNodeResult::Failed;
 }

@@ -7,7 +7,7 @@
 #include "TimerManager.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "MyCombatReactInterface.h"
+#include "../Interfaces/CombatReactInterface.h"
 
 // Sets default values
 AMyBreath::AMyBreath()
@@ -67,8 +67,10 @@ void AMyBreath::BreathDamage()
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(GetInstigator());
 
+
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+
 
 	FHitResult OutHit;
 	UKismetSystemLibrary::CapsuleTraceSingleForObjects(
@@ -98,7 +100,7 @@ void AMyBreath::BreathDamage()
 			NULL
 		);
 
-		IMyCombatReactInterface* Object = Cast<IMyCombatReactInterface>(OutHit.GetActor());
+		ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
 		if (Object)
 		{
 			Object->ApplyHit(OutHit, this);

@@ -5,6 +5,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "MyBreath.h"
+#include "GameFrameWork/Character.h"
 
 void UAnimNotify_MyBreathStart::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
@@ -18,15 +19,19 @@ void UAnimNotify_MyBreathStart::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 
 	if (Breath)
 	{
-		FVector SpawnLocation =
-			MeshComp->GetSocketLocation("breath_socket");
-		FRotator SpawnRotation =
-			MeshComp->GetSocketRotation("breath_socket");
+		FVector SpawnLocation = MeshComp->GetSocketLocation("breath_socket");
+		FRotator SpawnRotation = MeshComp->GetSocketRotation("breath_socket");
 
-		MeshComp->GetWorld()->SpawnActor<AMyBreath>(
+		AMyBreath* SpawnedBreath = MeshComp->GetWorld()->SpawnActor<AMyBreath>(
 			Breath,
 			SpawnLocation,
 			SpawnRotation
 		);
+
+		ACharacter* Instigator = Cast<ACharacter>(MeshComp->GetOwner());
+		if (Instigator)
+		{
+			SpawnedBreath->SetInstigator(Instigator);
+		}
 	}
 }

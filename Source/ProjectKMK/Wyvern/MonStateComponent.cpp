@@ -32,6 +32,7 @@ void UMonStateComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+
 }
 
 void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterPhase)
@@ -136,17 +137,18 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 	}
 }
 
-void UMonStateComponent::SetMonState(FName RowName)
+void UMonStateComponent::SetMonState(EPhase InPhase)
 {
 	if (MonStateDataTable)
 	{
+		FName RowName = MonStateDataTable->GetRowNames()[uint8(InPhase)];
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *RowName.ToString());
 		FMyMonState* Data = MonStateDataTable->FindRow<FMyMonState>(RowName, RowName.ToString());
 		if (Data)
 		{
 			CurMonState.MonData.Name = Data->Name;
 			CurMonState.MonData.MaxHP = Data->MaxHP;
 			CurMonState.MonData.WeaknessHP = Data->WeaknessHP;
-			CurMonState.MonData.Phase = Data->Phase;
 			CurMonState.CurHP = Data->MaxHP;
 			CurMonState.CurWeakHP = Data->WeaknessHP;
 		}

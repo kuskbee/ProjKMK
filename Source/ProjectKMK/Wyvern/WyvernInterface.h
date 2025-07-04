@@ -20,5 +20,4 @@ class IWyvernInterface
 	GENERATED_BODY()
 public:
 	virtual bool Attack();
-	virtual bool SetAIState(EAIState AIState);
 };

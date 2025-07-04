@@ -4,32 +4,21 @@
 #include "BTTask_MyWyvernAttack.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "AIController.h"
-#include "WyvernCharacter.h"
 #include "WyvernInterface.h"
 
 EBTNodeResult::Type UBTTask_MyWyvernAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
     Super::ExecuteTask(OwnerComp, NodeMemory);
 
-    ControlledPawn = OwnerComp.GetAIOwner()->GetPawn();
-
-    AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(ControlledPawn);
+    IWyvernInterface* WyvernChar = Cast<IWyvernInterface>(OwnerComp.GetAIOwner()->GetPawn());
 
     if (WyvernChar)
     {
-        WyvernChar->EventAttackEnd.AddDynamic(this, &UBTTask_MyWyvernAttack::OnAttackEnd);
         WyvernChar->Attack();
 
         return EBTNodeResult::Succeeded;
     }
-    else
-    {
-        return EBTNodeResult::Failed;
-    }
-}
 
-void UBTTask_MyWyvernAttack::OnAttackEnd()
-{
-    AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(ControlledPawn);
-    WyvernChar->EventAttackEnd.RemoveDynamic(this, &UBTTask_MyWyvernAttack::OnAttackEnd);
+    return EBTNodeResult::Failed;
+
 }

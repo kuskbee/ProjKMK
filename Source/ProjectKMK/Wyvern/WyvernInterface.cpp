@@ -7,8 +7,3 @@ bool IWyvernInterface::Attack()
 {
 	return false;
 }
-
-bool IWyvernInterface::SetAIState(EAIState AIState)
-{
-	return false;
-}
