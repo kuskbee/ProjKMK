@@ -14,7 +14,9 @@ AKMKPlayerController::AKMKPlayerController()
 
 void AKMKPlayerController::OnPossess(APawn* InPawn)
 {
-	Super::OnPossess(InPawn);		
+	Super::OnPossess(InPawn);
+
+	SetupEnhanceInput();
 }
 
 void AKMKPlayerController::OnUnPossess()
