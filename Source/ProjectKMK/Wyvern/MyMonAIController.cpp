@@ -69,6 +69,7 @@ void AMyMonAIController::OnUnPossess()
 {
 	Super::OnUnPossess();
 
+	K2_DestroyActor();
 
 }
 
@@ -108,15 +109,14 @@ void AMyMonAIController::ProcessPerceptionForgetUpdated(AActor* Actor)
 
 }
 
-void AMyMonAIController::FindDamageCauser(AActor* DamageCauser)
+void AMyMonAIController::FindDamageCauser(AController* DamageCauser)
 {
-	APlayerCharacter* Player = Cast<APlayerCharacter>(DamageCauser);
+	APlayerCharacter* Player = Cast<APlayerCharacter>(DamageCauser->GetCharacter());
 
 	if (Player)
 	{
 		if (AIState == EAIState::Patrol)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Find Target!!"));
 			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Player);
 			BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
 

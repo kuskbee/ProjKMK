@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "WyvernInterface.h"
-#include "MyCombatReactInterface.h"
+#include "../Interfaces/CombatReactInterface.h"
 #include "Define.h"
 #include "MySurface.h"
 #include "WyvernCharacter.generated.h"
@@ -22,7 +22,7 @@ class UNiagaraSystem;
 class UParticleSystem;
 
 UCLASS()
-class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public IMyCombatReactInterface
+class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public ICombatReactInterface
 {
 	GENERATED_BODY()
 
@@ -71,7 +71,7 @@ public:
 	virtual bool Attack() override;
 
 	UFUNCTION(BlueprintCallable)
-	virtual bool ApplyHit(FHitResult HitResult, AActor* HitterActor) override;
+	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
 
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcherAttackEnd EventAttackEnd;
@@ -80,7 +80,7 @@ public:
 	void DoAttack(bool IsRightHand, bool IsMouth);
 
 	UFUNCTION()
-	void SetMonState(FName RowName);
+	void SetMonState(EPhase InPhase);
 
 	UFUNCTION()
 	void CutTail(bool IsNotCut);
@@ -114,7 +114,7 @@ public:
 	UFUNCTION()
 	void DeadCollision();
 
-	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
 	EPhase Phase;
 
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)

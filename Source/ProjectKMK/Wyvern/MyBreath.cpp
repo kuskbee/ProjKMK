@@ -7,7 +7,7 @@
 #include "TimerManager.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "MyCombatReactInterface.h"
+#include "../Interfaces/CombatReactInterface.h"
 
 // Sets default values
 AMyBreath::AMyBreath()
@@ -100,7 +100,7 @@ void AMyBreath::BreathDamage()
 			NULL
 		);
 
-		IMyCombatReactInterface* Object = Cast<IMyCombatReactInterface>(OutHit.GetActor());
+		ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
 		if (Object)
 		{
 			Object->ApplyHit(OutHit, this);

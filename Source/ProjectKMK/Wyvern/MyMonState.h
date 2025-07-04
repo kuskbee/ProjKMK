@@ -21,7 +21,6 @@ public:
 		Name = "None";
 		MaxHP = 0.0f;
 		WeaknessHP = 0.0f;
-		Phase = EPhase::FirstPhase;
 	}
 
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "Name", MakeStructureDefaultValue = "None"), BlueprintReadWrite)
@@ -32,8 +31,5 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "WeaknessHP", MakeStructureDefaultValue = "2000.000000"), BlueprintReadWrite)
 	float WeaknessHP;
-
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "Phase", MakeStructureDefaultValue = "NewEnumerator0"), BlueprintReadWrite)
-	EPhase Phase;
 
 };

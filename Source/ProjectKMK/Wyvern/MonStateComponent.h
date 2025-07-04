@@ -34,9 +34,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
 	struct FMyCurMonState CurMonState;
 
-	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
-	EPhase Phase;
-
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcher_MonState EventDispatcher_MonState;
 
@@ -53,7 +50,7 @@ public:
 	void AddDamage(float Damage, FName BoneName, EPhase MonsterPhase);
 
 	UFUNCTION(BlueprintCallable)
-	void SetMonState(FName RowName);
+	void SetMonState(EPhase InPhase);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsDeath(FMyCurMonState State);

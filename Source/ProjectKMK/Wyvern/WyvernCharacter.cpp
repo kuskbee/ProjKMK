@@ -62,11 +62,8 @@ AWyvernCharacter::AWyvernCharacter()
 void AWyvernCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	const UEnum* EnumPtr = StaticEnum<EPhase>();
-	FString EPhaseName = EnumPtr->GetNameStringByValue(static_cast<int64>(Phase));
 
-	SetMonState((FName) EPhaseName);
+	SetMonState(Phase);
 
 	MonStateComponent->EventDispatcher_Death.AddDynamic(this,
 		&AWyvernCharacter::DoDeath);
@@ -169,7 +166,7 @@ bool AWyvernCharacter::Attack()
 	return true;
 }
 
-bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
+bool AWyvernCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)
 {
 	if (MonAIState != EAIState::Dead && MonAIState != EAIState::Runaway && MonAIState != EAIState::RunawayReady)
 	{
@@ -232,11 +229,11 @@ bool AWyvernCharacter::ApplyHit(FHitResult HitResult, AActor* HitterActor)
 	}
 }
 
-void AWyvernCharacter::SetMonState(FName RowName)
+void AWyvernCharacter::SetMonState(EPhase InPhase)
 {
 	if (IsValid(MonStateComponent))
 	{
-		MonStateComponent->SetMonState(RowName);
+		MonStateComponent->SetMonState(InPhase);
 	}
 }
 
@@ -297,7 +294,6 @@ void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
 	IsPlayMontage = false;
 	if (Montage == AttackMontage)
 	{
-
 		EventAttackEnd.Broadcast();
 	}
 }
@@ -313,25 +309,17 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 {
 	if (MonAIState == EAIState::Patrol)
 	{
-		AMyMonAIController* MonController = Cast< AMyMonAIController>(GetController());
+		AMyMonAIController* MonController = Cast<AMyMonAIController>(GetController());
 		if (MonController)
 		{
-			MonController->FindDamageCauser(DamagedActor);
+			MonController->FindDamageCauser(InstigatedBy);
 //			나중에 BT 전부 완성되면 ShowMonsterHealthBar() 를 WyvernCharacter 쪽으로 옮길거임
-//			if (Phase == EPhase::ThirdPhase)
-//			{
-//				ShowMonsterHealthBar();
-//			}
-			//MonController->ChasePlayer(InstigatedBy->GetPawn());
+			//if (Phase == EPhase::ThirdPhase)
+			//{
+			//	ShowMonsterHealthBar();
+			//}
 		}
 	}
-//		if (WyvernCharacter->MonAIState != EAIState::Battle)
-//		{
-//			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
-//			BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8 (EAIState::Chase));
-//			WyvernCharacter->MonAIState = EAIState::Chase;
-//
-//		}
 
 	MonStateComponent->AddDamage(In_Damage, BoneName, Phase);
 
@@ -387,7 +375,7 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 			NULL
 		);
 
-		IMyCombatReactInterface* Object = Cast<IMyCombatReactInterface>(OutHit.GetActor());
+		ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
 		if (Object)
 		{
 			Object->ApplyHit(OutHit, this);
@@ -463,6 +451,8 @@ bool AWyvernCharacter::IsMonsterMovable()
 
 void AWyvernCharacter::DoDeath()
 {
+	DeadCollision();
+
 	switch (Phase)
 	{
 	case EPhase::FirstPhase:
@@ -501,17 +491,13 @@ void AWyvernCharacter::DoDeath()
 
 		break;
 	}
-	DeadCollision();
 
-	// Need APlayerCharcter Function!!!
-	// 
-	// 
-	//APlayerCharacter* PlayerChar = Cast<APlayerCharacter>
-	//	(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
-	//if (PlayerChar)
-	//{
-	//	PlayerChar->ChangeCameraToAnotherView();
-	//}
+	APlayerCharacter* PlayerChar = Cast<APlayerCharacter>
+		(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
+	if (PlayerChar)
+	{
+		//PlayerChar->ChangeCameraToAnotherView(); 아직 미구현 한준님 담당!
+	}
 }
 
 void AWyvernCharacter::DeadCollision()
@@ -520,10 +506,6 @@ void AWyvernCharacter::DeadCollision()
 	if (MyController)
 	{
 		MyController->UnPossess();
-
-		MyController->K2_DestroyActor();
-
-		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &AWyvernCharacter::EventMontageEnd);
 
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

@@ -45,7 +45,7 @@ public:
 	void ProcessPerceptionForgetUpdated(AActor* Actor);
 
 	UFUNCTION()
-	void FindDamageCauser(AActor* DamageCauser);
+	void FindDamageCauser(AController* DamageCauser);
 
 	UFUNCTION()
 	void ShowMonsterHealthBar();
