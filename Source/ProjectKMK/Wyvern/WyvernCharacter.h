@@ -34,6 +34,12 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// WyvernInterface Implement
+	virtual void Attack() override;
+
+	// CombatReactInterface Implement
+	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -67,16 +73,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "AI", BlueprintReadWrite)
 	TObjectPtr<UBehaviorTree> WyvernBehaviorTree;
 
-	UFUNCTION(BlueprintCallable)
-	virtual bool Attack() override;
-
-	void RandomAttack(UDataTable* SkillDataTable, float InPlayerRate);
-
-	UFUNCTION(BlueprintCallable)
-	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
-
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcherAttackEnd EventAttackEnd;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void S2A_RandomAttack(UDataTable* SkillDataTable, float InPlayerRate);
+	void S2A_RandomAttack_Implementation(UDataTable* SkillDataTable, float InPlayerRate);
 
 	UFUNCTION()
 	void DoAttack(bool IsRightHand, bool IsMouth);

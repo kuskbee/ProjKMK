@@ -79,20 +79,17 @@ void AMyMonAIController::ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 
 	if (PlayerCharacter)
 	{
-		if (AIState == EAIState::Patrol)
+		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+
+		if (WyvernCharacter && WyvernCharacter->MonAIState == EAIState::Patrol)
 		{
-			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
+			BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
+			WyvernCharacter->MonAIState = EAIState::Chase;
 
-			if (WyvernCharacter)
+			if (WyvernCharacter->Phase == EPhase::ThirdPhase)
 			{
-				BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
-				BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
-				WyvernCharacter->MonAIState = EAIState::Chase;
-
-				if (WyvernCharacter->Phase == EPhase::ThirdPhase)
-				{
-					ShowMonsterHealthBar();
-				}
+				ShowMonsterHealthBar();
 			}
 		}
 	}
@@ -109,23 +106,22 @@ void AMyMonAIController::ProcessPerceptionForgetUpdated(AActor* Actor)
 
 }
 
-void AMyMonAIController::FindDamageCauser(AController* DamageCauser)
+void AMyMonAIController::FirstEncounterTarget(AController* Causer)
 {
-	APlayerCharacter* Player = Cast<APlayerCharacter>(DamageCauser->GetCharacter());
+	APlayerCharacter* Player = Cast<APlayerCharacter>(Causer->GetCharacter());
 
 	if (Player)
 	{
-		if (AIState == EAIState::Patrol)
+		Players.Add(Player);
+
+		BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Player);
+		BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
+
+		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+
+		if (WyvernCharacter)
 		{
-			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Player);
-			BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
-
-			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
-
-			if (WyvernCharacter)
-			{
-				WyvernCharacter->MonAIState = EAIState::Chase;
-			}
+			WyvernCharacter->MonAIState = EAIState::Chase;
 		}
 	}
 }

@@ -108,7 +108,7 @@ void AWyvernCharacter::PossessedBy(AController* NewController)
 	InitAI(NewController);
 }
 
-bool AWyvernCharacter::Attack()
+void AWyvernCharacter::Attack()
 {
 	if (!IsPlayMontage)
 	{
@@ -116,34 +116,32 @@ bool AWyvernCharacter::Attack()
 		{
 		case EPhase::FirstPhase:
 			if (FirstPhaseTable) {
-				RandomAttack(FirstPhaseTable, 1.2f);
+				S2A_RandomAttack(FirstPhaseTable, 1.2f);
 			}
 			break;
 		case EPhase::SecondPhase:
 			if (SecondPhaseTable)
 			{
-				RandomAttack(SecondPhaseTable, 1.2f);
+				S2A_RandomAttack(SecondPhaseTable, 1.2f);
 			}
 			break;
 		case EPhase::ThirdPhase:
 			if (ThirdPhaseTable)
 			{
-				RandomAttack(ThirdPhaseTable, 1.4f);
+				S2A_RandomAttack(ThirdPhaseTable, 1.4f);
 			}
 			break;
 		}
 	}
-
-	return true;
 }
 
-void AWyvernCharacter::RandomAttack(UDataTable* SkillDataTable, float InPlayerRate)
+void AWyvernCharacter::S2A_RandomAttack_Implementation(UDataTable* SkillDataTable, float InPlayerRate)
 {
 	if (SkillDataTable)
 	{
 		TArray<FName> Names = SkillDataTable->GetRowNames();
-		int RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-		FName RandName = Names[RandomIndex];
+		int Random = FMath::RandRange(0, Names.Num() - 1);
+		FName RandName = Names[Random];
 		FST_MyMonsterSkill* Skill = SkillDataTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
 
 		if (IsValid(Skill->SkillAnimMontage))
@@ -309,7 +307,7 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 		AMyMonAIController* MonController = Cast<AMyMonAIController>(GetController());
 		if (MonController)
 		{
-			MonController->FindDamageCauser(InstigatedBy);
+			MonController->FirstEncounterTarget(InstigatedBy);
 //			나중에 BT 전부 완성되면 ShowMonsterHealthBar() 를 WyvernCharacter 쪽으로 옮길거임
 			//if (Phase == EPhase::ThirdPhase)
 			//{
