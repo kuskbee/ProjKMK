@@ -125,11 +125,6 @@ void AMyMonAIController::FindDamageCauser(AController* DamageCauser)
 			if (WyvernCharacter)
 			{
 				WyvernCharacter->MonAIState = EAIState::Chase;
-
-				if (WyvernCharacter->Phase == EPhase::ThirdPhase)
-				{
-					ShowMonsterHealthBar();
-				}
 			}
 		}
 	}
