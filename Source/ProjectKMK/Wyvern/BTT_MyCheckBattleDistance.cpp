@@ -16,16 +16,16 @@ EBTNodeResult::Type UBTT_MyCheckBattleDistance::ExecuteTask(UBehaviorTreeCompone
 
 	if (Target)
 	{
-		AWyvernCharacter* Wyvern = Cast<AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
+		AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
 
-		if (Wyvern)
+		if (WyvernChar)
 		{
-			FVector OwnerLocation = Wyvern->GetActorLocation();
-			float Offset = Wyvern->GetDistanceTo(Target);
+			FVector OwnerLocation = WyvernChar->GetActorLocation();
+			float Offset = WyvernChar->GetDistanceTo(Target);
 
 			if (Offset < Distance)
 			{
-				Wyvern->MonAIState = EAIState::Battle;
+				WyvernChar->MonAIState = EAIState::Battle;
 				OwnerComp.GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Battle));
 
 				return EBTNodeResult::Succeeded;

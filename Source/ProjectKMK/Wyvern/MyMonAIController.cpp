@@ -46,7 +46,7 @@ void AMyMonAIController::BeginPlay()
 	GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this,
 		&AMyMonAIController::ProcessPerceptionUpdated);
 
-	GetPerceptionComponent()->OnTargetPerceptionForgotten.AddDynamic(this, 
+	GetPerceptionComponent()->OnTargetPerceptionForgotten.AddDynamic(this,
 		&AMyMonAIController::ProcessPerceptionForgetUpdated);
 }
 
@@ -54,13 +54,16 @@ void AMyMonAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(InPawn);
-
-	if (WyvernCharacter)
+	if (HasAuthority())
 	{
-		if (WyvernCharacter->WyvernBehaviorTree)
+		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(InPawn);
+
+		if (WyvernCharacter)
 		{
-			RunBehaviorTree(WyvernCharacter->WyvernBehaviorTree);
+			if (WyvernCharacter->WyvernBehaviorTree)
+			{
+				RunBehaviorTree(WyvernCharacter->WyvernBehaviorTree);
+			}
 		}
 	}
 }
@@ -75,24 +78,28 @@ void AMyMonAIController::OnUnPossess()
 
 void AMyMonAIController::ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	APlayerCharacter* PlayerCharacter = Cast< APlayerCharacter>(Actor);
-
-	if (PlayerCharacter)
+	if (HasAuthority())
 	{
-		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+		APlayerCharacter* PlayerCharacter = Cast< APlayerCharacter>(Actor);
 
-		if (WyvernCharacter && WyvernCharacter->MonAIState == EAIState::Patrol)
+		if (PlayerCharacter)
 		{
-			BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
-			BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
-			WyvernCharacter->MonAIState = EAIState::Chase;
+			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
 
-			if (WyvernCharacter->Phase == EPhase::ThirdPhase)
+			if (WyvernCharacter && WyvernCharacter->MonAIState == EAIState::Patrol)
 			{
-				ShowMonsterHealthBar();
+				BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
+				BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
+				WyvernCharacter->MonAIState = EAIState::Chase;
+
+				if (WyvernCharacter->Phase == EPhase::ThirdPhase)
+				{
+					ShowMonsterHealthBar();
+				}
 			}
 		}
 	}
+	
 }
 
 void AMyMonAIController::ProcessPerceptionForgetUpdated(AActor* Actor)
@@ -106,25 +113,25 @@ void AMyMonAIController::ProcessPerceptionForgetUpdated(AActor* Actor)
 
 }
 
-void AMyMonAIController::FirstEncounterTarget(AController* Causer)
-{
-	APlayerCharacter* Player = Cast<APlayerCharacter>(Causer->GetCharacter());
-
-	if (Player)
-	{
-		Players.Add(Player);
-
-		BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Player);
-		BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
-
-		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
-
-		if (WyvernCharacter)
-		{
-			WyvernCharacter->MonAIState = EAIState::Chase;
-		}
-	}
-}
+//void AMyMonAIController::FirstEncounterTarget(AController* Causer)
+//{
+//	APlayerCharacter* Player = Cast<APlayerCharacter>(Causer->GetCharacter());
+//
+//	if (Player)
+//	{
+//		Players.Add(Player);
+//
+//		BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Player);
+//		BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
+//
+//		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+//
+//		if (WyvernCharacter)
+//		{
+//			WyvernCharacter->MonAIState = EAIState::Chase;
+//		}
+//	}
+//}
 
 void AMyMonAIController::ShowMonsterHealthBar()
 {
@@ -134,6 +141,7 @@ void AMyMonAIController::ShowMonsterHealthBar()
 	{
 		if (!LocalHud->IsShowHealthBar)
 		{
+
 			LocalHud->ShowMonsterHealthBar();
 			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(K2_GetPawn());
 			if (WyvernCharacter)

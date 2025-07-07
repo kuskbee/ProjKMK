@@ -33,9 +33,6 @@ public:
 	virtual void OnUnPossess() override;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
-	TArray<TObjectPtr<ACharacter>> Players;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<UAIPerceptionComponent> AIPerception;
 
 	UFUNCTION()
@@ -44,8 +41,8 @@ public:
 	UFUNCTION()
 	void ProcessPerceptionForgetUpdated(AActor* Actor);
 
-	UFUNCTION()
-	void FirstEncounterTarget(AController* DamageCauser);
+	//UFUNCTION()
+	//void FirstEncounterTarget(AController* DamageCauser);
 
 	UFUNCTION()
 	void ShowMonsterHealthBar();

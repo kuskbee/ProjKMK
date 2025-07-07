@@ -7,7 +7,6 @@
 #include "Camera/CameraComponent.h"
 #include "MotionWarpingComponent.h"
 #include "MonStateComponent.h"
-#include "Define.h"
 #include "ST_MyMonsterSkill.h"
 #include "Animation/AnimMontage.h"
 #include "MySurface.h"
@@ -17,9 +16,12 @@
 #include "NiagaraSystem.h"
 #include "Particles/ParticleSystem.h"
 #include "MyMonAIController.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "../PlayerCharacter.h"
 #include "../UI/MyHUD.h"
+
 
 // Sets default values
 AWyvernCharacter::AWyvernCharacter()
@@ -112,51 +114,82 @@ void AWyvernCharacter::Attack()
 {
 	if (!IsPlayMontage)
 	{
+		float PlayerRate;
+		TArray<FName> Names;
+		int Random;
+		FName RandName;
+		FST_MyMonsterSkill* Skill;
+
 		switch (Phase)
 		{
 		case EPhase::FirstPhase:
-			if (FirstPhaseTable) {
-				S2A_RandomAttack(FirstPhaseTable, 1.2f);
+			if (FirstPhaseTable)
+			{
+				PlayerRate = 1.2f;
+				Names = FirstPhaseTable->GetRowNames();
+				Random = FMath::RandRange(0, Names.Num() - 1);
+				RandName = Names[Random];
+				Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+				AttackMontage = Skill->SkillAnimMontage;
 			}
+
 			break;
+
 		case EPhase::SecondPhase:
 			if (SecondPhaseTable)
 			{
-				S2A_RandomAttack(SecondPhaseTable, 1.2f);
+				PlayerRate = 1.2f;
+				Names = SecondPhaseTable->GetRowNames();
+				Random = FMath::RandRange(0, Names.Num() - 1);
+				RandName = Names[Random];
+				Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+				AttackMontage = Skill->SkillAnimMontage;
 			}
+
 			break;
 		case EPhase::ThirdPhase:
 			if (ThirdPhaseTable)
 			{
-				S2A_RandomAttack(ThirdPhaseTable, 1.4f);
+				PlayerRate = 1.4f;
+				Names = ThirdPhaseTable->GetRowNames();
+				Random = FMath::RandRange(0, Names.Num() - 1);
+				RandName = Names[Random];
+				Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+				AttackMontage = Skill->SkillAnimMontage;
 			}
 			break;
+		}
+		if (AttackMontage)
+		{
+			S2A_OnAttack(AttackMontage, 1.4f);
 		}
 	}
 }
 
-void AWyvernCharacter::S2A_RandomAttack_Implementation(UDataTable* SkillDataTable, float InPlayerRate)
+//void AWyvernCharacter::C2S_Attack_Implementation()
+//{
+//
+//}
+//
+//bool AWyvernCharacter::C2S_Attack_Validate()
+//{
+//
+//	return false;
+//}
+
+void AWyvernCharacter::S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate)
 {
-	if (SkillDataTable)
+	if (InAttackMontage)
 	{
-		TArray<FName> Names = SkillDataTable->GetRowNames();
-		int Random = FMath::RandRange(0, Names.Num() - 1);
-		FName RandName = Names[Random];
-		FST_MyMonsterSkill* Skill = SkillDataTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+		PlayAnimMontage(InAttackMontage, InPlayerRate);
 
-		if (IsValid(Skill->SkillAnimMontage))
+		if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(InAttackMontage))
 		{
-			AttackMontage = Skill->SkillAnimMontage;
-			PlayAnimMontage(AttackMontage, InPlayerRate);
-
-			if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
-			{
-				IsPlayMontage = true;
-			}
-			else
-			{
-				EventMontageEnd(AttackMontage, false);
-			}
+			IsPlayMontage = true;
+		}
+		else
+		{
+			EventMontageEnd(InAttackMontage, false);
 		}
 	}
 }
@@ -307,7 +340,7 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 		AMyMonAIController* MonController = Cast<AMyMonAIController>(GetController());
 		if (MonController)
 		{
-			MonController->FirstEncounterTarget(InstigatedBy);
+			//MonController->FirstEncounterTarget(InstigatedBy);
 //			나중에 BT 전부 완성되면 ShowMonsterHealthBar() 를 WyvernCharacter 쪽으로 옮길거임
 			//if (Phase == EPhase::ThirdPhase)
 			//{

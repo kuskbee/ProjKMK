@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "WyvernInterface.h"
 #include "../Interfaces/CombatReactInterface.h"
+#include "ST_MyMonsterSkill.h"
 #include "Define.h"
 #include "MySurface.h"
 #include "WyvernCharacter.generated.h"
@@ -76,9 +77,14 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcherAttackEnd EventAttackEnd;
 
+	//UFUNCTION(Server, Reliable, WithValidation)
+	//void C2S_Attack();
+	//void C2S_Attack_Implementation();
+	//bool C2S_Attack_Validate();
+
 	UFUNCTION(NetMulticast, Reliable)
-	void S2A_RandomAttack(UDataTable* SkillDataTable, float InPlayerRate);
-	void S2A_RandomAttack_Implementation(UDataTable* SkillDataTable, float InPlayerRate);
+	void S2A_OnAttack(UAnimMontage* InAttackMontage, float InPlayerRate);
+	void S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate);
 
 	UFUNCTION()
 	void DoAttack(bool IsRightHand, bool IsMouth);
@@ -126,6 +132,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	EAIState MonAIState;
+
 
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	float CurHP;
