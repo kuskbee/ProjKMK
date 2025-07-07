@@ -86,8 +86,9 @@ void AMyHUD::ShowMonsterHealthBar()
 {
 	if (HudWidget)
 	{
-		HudWidget->ShowMonsterHealthBar(false);
+		HudWidget->ShowMonsterHealthBar();
 	}
+	IsShowHealthBar = true;
 }
 
 void AMyHUD::BindPlayerEvent(UStatusComponent* StatusComponent)

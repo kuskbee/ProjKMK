@@ -14,9 +14,13 @@ AWeaponBase::AWeaponBase()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	bReplicates = true;
+
 	// * Initialize Components
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(RootComponent);
+
+	WeaponMesh->SetIsReplicated(true);
 
 	WeaponBox = CreateDefaultSubobject<UBoxComponent>(TEXT("WeaponBox"));
 	WeaponBox->SetupAttachment(WeaponMesh);
@@ -57,13 +61,17 @@ void AWeaponBase::BeginPlay()
 
 	AActor* IgnoreActor = Cast<AActor>(OwnerCharacter);
 	WeaponBox->IgnoreActorWhenMoving(IgnoreActor, true);
+
+	if (!OwnerCharacter)
+	{
+		OwnerCharacter = Cast<ACharacter>(GetOwner());
+	}
 }
 
 // Called every frame
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void AWeaponBase::SetWeaponCollisionEnable(bool IsEnable)
@@ -138,13 +146,15 @@ bool AWeaponBase::DoBoxTrace(AActor* TargetActor, FHitResult& OutHit)
 
 bool AWeaponBase::HasSameMonsterTag(AActor* TargetActor)
 {
-	if (!TargetActor)
+	if (!TargetActor || !OwnerCharacter)
 	{
 		return false;
 	}
 
-	bool bTargetHasTag = TargetActor->ActorHasTag(FName(TEXT("Monster")));
-	bool bOwnerHasTag = OwnerCharacter->ActorHasTag(FName(TEXT("Monster")));
+	//bool bTargetHasTag = TargetActor->ActorHasTag(FName(TEXT("Monster")));
+	//bool bOwnerHasTag = OwnerCharacter->ActorHasTag(FName(TEXT("Monster")));
+	bool bTargetHasTag = TargetActor->ActorHasTag("Monster");
+	bool bOwnerHasTag = OwnerCharacter->ActorHasTag("Monster");
 	return (bTargetHasTag && bOwnerHasTag);
 }
 
@@ -167,15 +177,17 @@ void AWeaponBase::OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent, A
 			return;
 		}
 
-		UGameplayStatics::ApplyPointDamage(DamagedActor, AttackPower, HitResult.ImpactPoint, HitResult,
-			OwnerCharacter->GetController(), this, UDamageType::StaticClass());
-
-		ICombatReactInterface* Hittable = Cast<ICombatReactInterface>(DamagedActor);
-		if (Hittable)
+		if (IsValid(OwnerCharacter))
 		{
-			Hittable->ApplyHit(HitResult, OwnerCharacter);
+			UGameplayStatics::ApplyPointDamage(DamagedActor, AttackPower, HitResult.ImpactPoint, HitResult,
+				OwnerCharacter->GetController(), this, UDamageType::StaticClass());
+
+			ICombatReactInterface* Hittable = Cast<ICombatReactInterface>(DamagedActor);
+			if (Hittable)
+			{
+				Hittable->ApplyHit(HitResult, OwnerCharacter);
+			}
 		}
 	}
-
 }
 

@@ -20,6 +20,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "../PlayerCharacter.h"
 #include "../UI/MyHUD.h"
+#include "../InGameGameState.h"
 
 // Sets default values
 AWyvernCharacter::AWyvernCharacter()
@@ -477,12 +478,12 @@ void AWyvernCharacter::DoDeath()
 		{
 			MonAIState = EAIState::Dead;
 			PlayAnimMontage(DeadMontage);
-
-			AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
-		
-			if (LocalHud)
+			if (HasAuthority())
 			{
-				LocalHud->EventChangeGameState(EGameState::EGS_Win);
+				if (AInGameGameState* InGameGameState = GetWorld()->GetGameState<AInGameGameState>())
+				{
+					InGameGameState->SetCurrentGameState(EGameState::EGS_Win);
+				}
 			}
 		}
 
