@@ -114,23 +114,24 @@ void AWyvernCharacter::Attack()
 {
 	if (!IsPlayMontage)
 	{
-		float PlayerRate;
 		TArray<FName> Names;
-		int Random;
-		FName RandName;
+		int RandomIndex;
 		FST_MyMonsterSkill* Skill;
+		UAnimMontage* AttackMontage;
 
 		switch (Phase)
 		{
 		case EPhase::FirstPhase:
 			if (FirstPhaseTable)
 			{
-				PlayerRate = 1.2f;
 				Names = FirstPhaseTable->GetRowNames();
-				Random = FMath::RandRange(0, Names.Num() - 1);
-				RandName = Names[Random];
-				Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+				RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+				Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 				AttackMontage = Skill->SkillAnimMontage;
+				if (AttackMontage)
+				{
+					S2A_OnAttack(AttackMontage, 1.2f);
+				}
 			}
 
 			break;
@@ -138,44 +139,33 @@ void AWyvernCharacter::Attack()
 		case EPhase::SecondPhase:
 			if (SecondPhaseTable)
 			{
-				PlayerRate = 1.2f;
 				Names = SecondPhaseTable->GetRowNames();
-				Random = FMath::RandRange(0, Names.Num() - 1);
-				RandName = Names[Random];
-				Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+				RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+				Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 				AttackMontage = Skill->SkillAnimMontage;
+				if (AttackMontage)
+				{
+					S2A_OnAttack(AttackMontage, 1.2f);
+				}
 			}
 
 			break;
 		case EPhase::ThirdPhase:
 			if (ThirdPhaseTable)
 			{
-				PlayerRate = 1.4f;
 				Names = ThirdPhaseTable->GetRowNames();
-				Random = FMath::RandRange(0, Names.Num() - 1);
-				RandName = Names[Random];
-				Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(RandName, RandName.ToString());
+				RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+				Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 				AttackMontage = Skill->SkillAnimMontage;
+				if (AttackMontage)
+				{
+					S2A_OnAttack(AttackMontage, 1.4f);
+				}
 			}
 			break;
 		}
-		if (AttackMontage)
-		{
-			S2A_OnAttack(AttackMontage, 1.4f);
-		}
 	}
 }
-
-//void AWyvernCharacter::C2S_Attack_Implementation()
-//{
-//
-//}
-//
-//bool AWyvernCharacter::C2S_Attack_Validate()
-//{
-//
-//	return false;
-//}
 
 void AWyvernCharacter::S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate)
 {
@@ -320,10 +310,7 @@ void AWyvernCharacter::CutTail(bool IsNotCut)
 void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
 {
 	IsPlayMontage = false;
-	if (Montage == AttackMontage)
-	{
-		EventAttackEnd.Broadcast();
-	}
+	EventAttackEnd.Broadcast();
 }
 
 void AWyvernCharacter::EventUpdateMonPhase(EPhase In_Phase)
@@ -538,4 +525,28 @@ void AWyvernCharacter::DeadCollision()
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+}
+
+void AWyvernCharacter::OnRep_MonAIState()
+{
+	switch (MonAIState)
+	{
+	case EAIState::Patrol:
+		break;
+	case EAIState::Chase:
+		break;
+	case EAIState::Battle:
+		break;
+	case EAIState::Dead:
+		break;
+	case EAIState::Runaway:
+		break;
+	}
+}
+
+void AWyvernCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWyvernCharacter, MonAIState);
 }

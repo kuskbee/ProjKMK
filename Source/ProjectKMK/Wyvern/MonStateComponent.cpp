@@ -4,6 +4,7 @@
 #include "MonStateComponent.h"
 #include "WyvernCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 UMonStateComponent::UMonStateComponent()
@@ -12,6 +13,7 @@ UMonStateComponent::UMonStateComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+	SetIsReplicatedByDefault(true);
 	// ...
 }
 
@@ -37,103 +39,58 @@ void UMonStateComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterPhase)
 {
-	if (IsDeath(CurMonState))
-		return;
-
 	AWyvernCharacter* Character = Cast<AWyvernCharacter>(GetOwner());
 	if (IsValid(Character))
 	{
 		USkeletalMeshComponent* Mesh = Character->GetMesh();
-		if (MonsterPhase == EPhase::FirstPhase)
+
+		switch (MonsterPhase)
 		{
-			FName Head = Mesh->GetSocketBoneName(TEXT("Bip001_Head"));
-			if (BoneName.Compare(Head) == 0)
+		case EPhase::FirstPhase:
+			if (BoneName.Compare(Mesh->GetSocketBoneName(TEXT("Bip001_Head"))) == 0)
 			{
 				CurMonState.CurHP = CurMonState.CurHP - Damage;
 				CurMonState.CurWeakHP = CurMonState.CurWeakHP - Damage;
-				EventDispatcher_UpdateHP.Broadcast(
-					CurMonState.MonData.MaxHP,
-					CurMonState.MonData.WeaknessHP,
-					CurMonState.CurHP,
-					CurMonState.CurWeakHP
-				);
-
-				if (IsDeath(CurMonState))
-				{
-					EventDispatcher_Death.Broadcast();
-				}
 			}
 			else
 			{
 				CurMonState.CurHP = CurMonState.CurHP - Damage;
-				CurMonState.CurWeakHP = CurMonState.CurWeakHP;
-				EventDispatcher_UpdateHP.Broadcast(
-					CurMonState.MonData.MaxHP,
-					CurMonState.MonData.WeaknessHP,
-					CurMonState.CurHP,
-					CurMonState.CurWeakHP
-				);
-
-				if (IsDeath(CurMonState))
-				{
-					EventDispatcher_Death.Broadcast();
-				}
 			}
-		}
-		else
-		{
-			if (MonsterPhase == EPhase::SecondPhase)
+			break;
+		case EPhase::SecondPhase:
+			if (BoneName.Compare(Mesh->GetSocketBoneName(TEXT("BN_Wynern_Tail_1"))) == 0 
+				|| BoneName.Compare(Mesh->GetSocketBoneName(TEXT("BN_Wynern_Tail_5"))) == 0)
 			{
-				FName Tail_1 = Mesh->GetSocketBoneName(TEXT("BN_Wynern_Tail_1"));
-				FName Tail_5 = Mesh->GetSocketBoneName(TEXT("BN_Wynern_Tail_5"));
-				if (BoneName.Compare(Tail_1) == 0 || BoneName.Compare(Tail_5) == 0)
-				{
-					CurMonState.CurHP = CurMonState.CurHP - Damage;
-					CurMonState.CurWeakHP = CurMonState.CurWeakHP - Damage;
-					EventDispatcher_UpdateHP.Broadcast(
-						CurMonState.MonData.MaxHP,
-						CurMonState.MonData.WeaknessHP,
-						CurMonState.CurHP,
-						CurMonState.CurWeakHP
-					);
-					if (IsDeath(CurMonState))
-					{
-						EventDispatcher_Death.Broadcast();
-					}
-				}
-				else
-				{
-					CurMonState.CurHP = CurMonState.CurHP - Damage;
-					CurMonState.CurWeakHP = CurMonState.CurWeakHP;
-					EventDispatcher_UpdateHP.Broadcast(
-						CurMonState.MonData.MaxHP,
-						CurMonState.MonData.WeaknessHP,
-						CurMonState.CurHP,
-						CurMonState.CurWeakHP
-					);
-					if (IsDeath(CurMonState))
-					{
-						EventDispatcher_Death.Broadcast();
-					}
-				}
+				CurMonState.CurHP = CurMonState.CurHP - Damage;
+				CurMonState.CurWeakHP = CurMonState.CurWeakHP - Damage;
 			}
 			else
 			{
 				CurMonState.CurHP = CurMonState.CurHP - Damage;
-				CurMonState.CurWeakHP = CurMonState.CurWeakHP;
-				EventDispatcher_UpdateHP.Broadcast(
-					CurMonState.MonData.MaxHP,
-					CurMonState.MonData.WeaknessHP,
-					CurMonState.CurHP,
-					CurMonState.CurWeakHP
-				);
-
-				if (IsDeath(CurMonState))
-				{
-					EventDispatcher_Death.Broadcast();
-				}
 			}
+			break;
+		case EPhase::ThirdPhase:
+			CurMonState.CurHP = CurMonState.CurHP - Damage;
+			CurMonState.CurWeakHP = CurMonState.CurWeakHP;
+			break;
 		}
+
+		S2A_AddDamage();
+	}
+}
+
+void UMonStateComponent::S2A_AddDamage_Implementation()
+{
+	EventDispatcher_UpdateHP.Broadcast(
+		CurMonState.MonData.MaxHP,
+		CurMonState.MonData.WeaknessHP,
+		CurMonState.CurHP,
+		CurMonState.CurWeakHP
+	);
+
+	if (IsDeath(CurMonState))
+	{
+		EventDispatcher_Death.Broadcast();
 	}
 }
 
@@ -142,7 +99,6 @@ void UMonStateComponent::SetMonState(EPhase InPhase)
 	if (MonStateDataTable)
 	{
 		FName RowName = MonStateDataTable->GetRowNames()[uint8(InPhase)];
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *RowName.ToString());
 		FMyMonState* Data = MonStateDataTable->FindRow<FMyMonState>(RowName, RowName.ToString());
 		if (Data)
 		{
@@ -158,5 +114,13 @@ void UMonStateComponent::SetMonState(EPhase InPhase)
 bool UMonStateComponent::IsDeath(FMyCurMonState State)
 {
 	return (State.CurHP <= 0 || State.CurWeakHP <= 0);
+}
+
+void UMonStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UMonStateComponent, CurMonState);
+
 }
 
