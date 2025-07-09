@@ -51,8 +51,9 @@ public:
 	UFUNCTION()
 	void CheckTargetActors();
 
-	UFUNCTION()
+	UFUNCTION(NetMulticast, Reliable)
 	void ShowMonsterHealthBar(APlayerCharacter* InPlayer);
+	void ShowMonsterHealthBar_Implementation(APlayerCharacter* InPlayer);
 
 	UFUNCTION()
 	void HideMonsterHealthBar(APlayerCharacter* InPlayer);

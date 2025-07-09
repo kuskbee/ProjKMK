@@ -88,6 +88,10 @@ void AMyMonAIController::ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 
 void AMyMonAIController::AddTargetActor(AActor* InTarget)
 {
+
+	//GetPawn()->AddTargetActor();
+
+
 	if (!TargetActors.Contains(InTarget))
 	{
 		TargetActors.Add(InTarget);
@@ -168,23 +172,26 @@ void AMyMonAIController::CheckTargetActors()
 	}
 }
 
-void AMyMonAIController::ShowMonsterHealthBar(APlayerCharacter* InPlayer)
+void AMyMonAIController::ShowMonsterHealthBar_Implementation(APlayerCharacter* InPlayer)
 {
-	APlayerController* OwnerPC = Cast<APlayerController>(InPlayer->GetController());
-	//OwnerPC->IsLocalController();
-	if (OwnerPC)
+	if (InPlayer->IsLocallyControlled() && InPlayer->IsPlayerControlled())
 	{
-		AMyHUD* LocalHud = Cast<AMyHUD>(OwnerPC->GetHUD());
-		if (LocalHud)
+		UE_LOG(LogTemp, Warning, TEXT("ShowMonsterHealthBar"));
+		APlayerController* OwnerPC = Cast< APlayerController>( InPlayer->GetController());
+		if (OwnerPC)
 		{
-			if (!LocalHud->IsShowHealthBar)
+			AMyHUD* LocalHud = Cast<AMyHUD>(OwnerPC->GetHUD());
+			if (LocalHud)
 			{
-
-				LocalHud->ShowMonsterHealthBar();
-				AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
-				if (WyvernCharacter)
+				if (!LocalHud->IsShowHealthBar)
 				{
-					LocalHud->BindWyvernEvent(WyvernCharacter);
+
+					LocalHud->ShowMonsterHealthBar();
+					AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+					if (WyvernCharacter)
+					{
+						LocalHud->BindWyvernEvent(WyvernCharacter);
+					}
 				}
 			}
 		}

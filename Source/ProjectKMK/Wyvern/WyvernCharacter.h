@@ -112,7 +112,7 @@ public:
 	float MaxHP;
 
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
-	float Damage;
+	float Damage = 100.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> HowlingMontage;

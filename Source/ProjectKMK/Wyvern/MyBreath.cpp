@@ -62,8 +62,8 @@ void AMyBreath::Tick(float DeltaTime)
 
 void AMyBreath::BreathDamage()
 {
-	FVector StartLoc = Start->K2_GetComponentLocation();
-	FVector EndLoc = End->K2_GetComponentLocation();
+	FVector StartLoc = Start->GetComponentLocation();
+	FVector EndLoc = End->GetComponentLocation();
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(GetInstigator());
 
@@ -71,39 +71,41 @@ void AMyBreath::BreathDamage()
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 
-
-	FHitResult OutHit;
-	UKismetSystemLibrary::CapsuleTraceSingleForObjects(
-		GetWorld(), 
-		StartLoc, 
-		EndLoc, 
-		200.0f, 
-		300.0f, 
-		ObjectTypes, 
-		false, 
+	TArray<FHitResult> OutHits;
+	UKismetSystemLibrary::CapsuleTraceMultiForObjects(
+		GetWorld(),
+		StartLoc,
+		EndLoc,
+		200.0f,
+		300.0f,
+		ObjectTypes,
+		false,
 		ActorsToIgnore,
 		EDrawDebugTrace::None,
-		OutHit, 
+		OutHits,
 		true,
-		FLinearColor::Red, 
-		FLinearColor::Green, 
+		FLinearColor::Red,
+		FLinearColor::Green,
 		500.0f
 	);
 
-	if (OutHit.GetActor())
+	for (FHitResult OutHit : OutHits)
 	{
-		UGameplayStatics::ApplyDamage(
-			OutHit.GetActor(),
-			Damage,
-			OutHit.GetActor()->GetInstigatorController(),
-			this,
-			NULL
-		);
-
-		ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
-		if (Object)
+		if (OutHit.GetActor())
 		{
-			Object->ApplyHit(OutHit, this);
+			UGameplayStatics::ApplyDamage(
+				OutHit.GetActor(),
+				Damage,
+				OutHit.GetActor()->GetInstigatorController(),
+				this,
+				NULL
+			);
+
+			ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
+			if (Object)
+			{
+				Object->ApplyHit(OutHit, this);
+			}
 		}
 	}
 }

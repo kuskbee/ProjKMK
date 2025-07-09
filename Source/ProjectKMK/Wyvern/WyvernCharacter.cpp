@@ -339,8 +339,8 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 	TArray<AActor*> ActorToIgnore;
 	ActorToIgnore.Add(this);
 
-	FHitResult OutHit;
-	UKismetSystemLibrary::SphereTraceSingleForObjects(
+	TArray<FHitResult> OutHits;
+	UKismetSystemLibrary::SphereTraceMultiForObjects(
 		GetWorld(),
 		AttackLocation,
 		AttackLocation,
@@ -349,24 +349,26 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 		false,
 		ActorToIgnore,
 		EDrawDebugTrace::None,
-		OutHit,
+		OutHits,
 		true
 	);
-
-	if (OutHit.GetActor())
+	for (FHitResult OutHit : OutHits)
 	{
-		UGameplayStatics::ApplyDamage(
-			OutHit.GetActor(),
-			Damage,
-			GetController(),
-			this,
-			NULL
-		);
-
-		ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
-		if (Object)
+		if (OutHit.GetActor())
 		{
-			Object->ApplyHit(OutHit, this);
+			UGameplayStatics::ApplyDamage(
+				OutHit.GetActor(),
+				Damage,
+				GetController(),
+				this,
+				NULL
+			);
+
+			ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
+			if (Object)
+			{
+				Object->ApplyHit(OutHit, this);
+			}
 		}
 	}
 }
@@ -511,7 +513,6 @@ void AWyvernCharacter::OnRep_MonAIState()
 	case EAIState::Battle:
 		break;
 	case EAIState::Dead:
-		UE_LOG(LogTemp, Warning, TEXT("IsDead!!!!!!"));
 		break;
 	case EAIState::Runaway:
 		break;
