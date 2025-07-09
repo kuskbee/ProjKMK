@@ -12,24 +12,24 @@ EBTNodeResult::Type UBTTask_MyCheckAttackEnd::ExecuteTask(UBehaviorTreeComponent
 
 	CachedOwnerComp = &OwnerComp;
 
-	AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
-	if (WyvernChar)
+	ACharacter* MyCharacter = Cast<ACharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	if (MyCharacter)
 	{
-		WyvernChar->EventAttackEnd.RemoveDynamic(this, &UBTTask_MyCheckAttackEnd::EventEndAttackMontage);
-		WyvernChar->EventAttackEnd.AddDynamic(this, &UBTTask_MyCheckAttackEnd::EventEndAttackMontage);
+		MyCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &UBTTask_MyCheckAttackEnd::EventEndAttackMontage);
+		MyCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &UBTTask_MyCheckAttackEnd::EventEndAttackMontage);
 	}
 
 	return EBTNodeResult::InProgress;
 }
 
-void UBTTask_MyCheckAttackEnd::EventEndAttackMontage()
+void UBTTask_MyCheckAttackEnd::EventEndAttackMontage(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (CachedOwnerComp)
 	{
-		AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(CachedOwnerComp->GetAIOwner()->GetPawn());
-		if (WyvernChar)
+		ACharacter* MyCharacter = Cast<ACharacter>(CachedOwnerComp->GetAIOwner()->GetPawn());
+		if (MyCharacter)
 		{
-			WyvernChar->EventAttackEnd.RemoveDynamic(this, &UBTTask_MyCheckAttackEnd::EventEndAttackMontage);
+			MyCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.RemoveDynamic(this, &UBTTask_MyCheckAttackEnd::EventEndAttackMontage);
 			FinishLatentTask(*CachedOwnerComp, EBTNodeResult::Succeeded);
 		}
 	}

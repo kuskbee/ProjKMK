@@ -18,5 +18,5 @@ public:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
 	UPROPERTY(EditAnywhere, Category = "Value", BlueprintReadWrite)
-	float Distance = 1000.0f;
+	float Distance = 100.0f;
 };

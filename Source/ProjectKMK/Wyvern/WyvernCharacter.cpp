@@ -66,7 +66,7 @@ void AWyvernCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetMonState(Phase);
+	MonStateComponent->SetMonState(Phase);
 
 	MonStateComponent->EventDispatcher_Death.AddDynamic(this,
 		&AWyvernCharacter::DoDeath);
@@ -108,12 +108,11 @@ void AWyvernCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	InitAI(NewController);
 }
 
 void AWyvernCharacter::Attack()
 {
-	if (!IsPlayMontage)
+	if (!GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
 	{
 		TArray<FName> Names;
 		int RandomIndex;
@@ -173,15 +172,6 @@ void AWyvernCharacter::S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage
 	if (InAttackMontage)
 	{
 		PlayAnimMontage(InAttackMontage, InPlayerRate);
-
-		if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(InAttackMontage))
-		{
-			IsPlayMontage = true;
-		}
-		else
-		{
-			EventMontageEnd(InAttackMontage, false);
-		}
 	}
 }
 
@@ -248,14 +238,6 @@ bool AWyvernCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor
 	}
 }
 
-void AWyvernCharacter::SetMonState(EPhase InPhase)
-{
-	if (IsValid(MonStateComponent))
-	{
-		MonStateComponent->SetMonState(InPhase);
-	}
-}
-
 void AWyvernCharacter::CutTail(bool IsNotCut)
 {
 	if (!GetMesh()->DoesSocketExist("blindspot"))
@@ -308,12 +290,6 @@ void AWyvernCharacter::CutTail(bool IsNotCut)
 	}
 }
 
-void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
-{
-	IsPlayMontage = false;
-	EventAttackEnd.Broadcast();
-}
-
 void AWyvernCharacter::EventUpdateMonPhase(EPhase In_Phase)
 {
 	Phase = In_Phase;
@@ -330,12 +306,6 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 		if (MonController && InstigatePlayer)
 		{
 			MonController->AddTargetActor(InstigatePlayer);
-
-//			나중에 BT 전부 완성되면 ShowMonsterHealthBar() 를 WyvernCharacter 쪽으로 옮길거임
-			//if (Phase == EPhase::ThirdPhase)
-			//{
-			//	ShowMonsterHealthBar();
-			//}
 		}
 	}
 
@@ -419,17 +389,6 @@ bool AWyvernCharacter::IsWeakAttack(FName BoneName)
 	return false;
 }
 
-void AWyvernCharacter::InitAI(UObject* In_Controller)
-{
-	AMyMonAIController* MonAIController = Cast<AMyMonAIController>(In_Controller);
-
-	if (MonAIController)
-	{
-		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this,
-			&AWyvernCharacter::EventMontageEnd);
-	}
-}
-
 void AWyvernCharacter::UpdateWalkSpeed(float In_WalkSpeed)
 {
 	GetCharacterMovement()->MaxWalkSpeed = In_WalkSpeed;
@@ -478,7 +437,6 @@ void AWyvernCharacter::DoDeath()
 		{
 			MonAIState = EAIState::RunawayReady;
 			PlayAnimMontage(HowlingMontage);
-			IsPlayMontage = true;
 		}
 
 		break;
@@ -488,7 +446,6 @@ void AWyvernCharacter::DoDeath()
 		{
 			MonAIState = EAIState::RunawayReady;
 			PlayAnimMontage(RevivalMontage);
-			IsPlayMontage = true;
 		}
 
 		break;
@@ -530,6 +487,19 @@ void AWyvernCharacter::DeadCollision()
 	}
 }
 
+void AWyvernCharacter::OnRep_Phase()
+{
+	switch (Phase)
+	{
+	case EPhase::FirstPhase:
+		break;
+	case EPhase::SecondPhase:
+		break;
+	case EPhase::ThirdPhase:
+		break;
+	}
+}
+
 void AWyvernCharacter::OnRep_MonAIState()
 {
 	switch (MonAIState)
@@ -541,6 +511,7 @@ void AWyvernCharacter::OnRep_MonAIState()
 	case EAIState::Battle:
 		break;
 	case EAIState::Dead:
+		UE_LOG(LogTemp, Warning, TEXT("IsDead!!!!!!"));
 		break;
 	case EAIState::Runaway:
 		break;
@@ -552,4 +523,5 @@ void AWyvernCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWyvernCharacter, MonAIState);
+	DOREPLIFETIME(AWyvernCharacter, Phase);
 }

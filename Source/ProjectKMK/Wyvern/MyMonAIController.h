@@ -54,6 +54,11 @@ public:
 	UFUNCTION()
 	void ShowMonsterHealthBar(APlayerCharacter* InPlayer);
 
+	UFUNCTION()
+	void HideMonsterHealthBar(APlayerCharacter* InPlayer);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<AActor>> TargetActors;
+
+	bool IsPlayAnimMontage;
 };
