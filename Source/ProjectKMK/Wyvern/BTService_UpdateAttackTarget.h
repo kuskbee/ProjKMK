@@ -17,11 +17,6 @@ class PROJECTKMK_API UBTService_UpdateAttackTarget : public UBTService_Blackboar
 	GENERATED_BODY()
 
 public:
-
+	UBTService_UpdateAttackTarget();
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
-
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
-	TArray<TObjectPtr<ACharacter>> Players;
-
 };

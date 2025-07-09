@@ -16,6 +16,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEventDispatcher_ChangeMonAIState, E
 
 
 class UAIPerceptionComponent;
+class APlayerCharacter;
 
 UCLASS()
 class PROJECTKMK_API AMyMonAIController : public AAIController
@@ -39,11 +40,20 @@ public:
 	void ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
 	UFUNCTION()
-	void ProcessPerceptionForgetUpdated(AActor* Actor);
-
-	//UFUNCTION()
-	//void FirstEncounterTarget(AController* DamageCauser);
+	void AddTargetActor(AActor* InTarget);
 
 	UFUNCTION()
-	void ShowMonsterHealthBar();
+	void RemoveTargetActor(AActor* InTarget);
+
+	UFUNCTION()
+	void ChangeTargetActor();
+
+	UFUNCTION()
+	void CheckTargetActors();
+
+	UFUNCTION()
+	void ShowMonsterHealthBar(APlayerCharacter* InPlayer);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<AActor>> TargetActors;
 };

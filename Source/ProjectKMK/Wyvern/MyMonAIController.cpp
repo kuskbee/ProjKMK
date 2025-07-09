@@ -5,9 +5,9 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Touch.h"
-#include "WyvernCharacter.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "WyvernCharacter.h"
 #include "../PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "../UI/MyHUD.h"
@@ -46,8 +46,6 @@ void AMyMonAIController::BeginPlay()
 	GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this,
 		&AMyMonAIController::ProcessPerceptionUpdated);
 
-	GetPerceptionComponent()->OnTargetPerceptionForgotten.AddDynamic(this,
-		&AMyMonAIController::ProcessPerceptionForgetUpdated);
 }
 
 void AMyMonAIController::OnPossess(APawn* InPawn)
@@ -84,69 +82,93 @@ void AMyMonAIController::ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 
 		if (PlayerCharacter)
 		{
-			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
-
-			if (WyvernCharacter && WyvernCharacter->MonAIState == EAIState::Patrol)
-			{
-				BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
-				BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
-				WyvernCharacter->MonAIState = EAIState::Chase;
-
-				if (WyvernCharacter->Phase == EPhase::ThirdPhase)
-				{
-					ShowMonsterHealthBar();
-				}
-			}
+			AddTargetActor(Actor);
 		}
 	}
 	
 }
 
-void AMyMonAIController::ProcessPerceptionForgetUpdated(AActor* Actor)
+void AMyMonAIController::AddTargetActor(AActor* InTarget)
 {
-	//AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(Actor);
-	//if (WyvernCharacter)
-	//{
-	//	WyvernCharacter->MonAIState = EAIState::Patrol;
-	//	BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Patrol));
-	//}
+	if (!TargetActors.Contains(InTarget))
+	{
+		TargetActors.Add(InTarget);
+
+		UBlackboardComponent* BB = GetBrainComponent()->GetBlackboardComponent();
+		if (BB->GetValueAsEnum("MonAIState") == (uint8)EAIState::Patrol)
+		{
+			BB->SetValueAsObject("TargetActor", InTarget);
+			BB->SetValueAsEnum("MonAIState", (uint8)EAIState::Chase);
+		}
+	}
+}
+
+void AMyMonAIController::RemoveTargetActor(AActor* InTarget)
+{
+	if (TargetActors.Contains(InTarget))
+	{
+		AActor* CurrentTarget = Cast<AActor>(GetBrainComponent()->GetBlackboardComponent()->GetValueAsObject("TargetActor"));
+		if (CurrentTarget && CurrentTarget == InTarget)
+		{
+			ChangeTargetActor();
+		}
+
+		TargetActors.Remove(InTarget);
+	}
+}
+
+void AMyMonAIController::ChangeTargetActor()
+{
+	if (TargetActors.Num() <= 1)
+	{
+		return;
+	}
+
+	AActor* NewTarget = TargetActors[(int)FMath::RandRange(0, TargetActors.Num() - 1)];
+
+	UBlackboardComponent* BB = GetBrainComponent()->GetBlackboardComponent();
+
+	BB->SetValueAsObject("TargetActor", NewTarget);
+	BB->SetValueAsEnum("MonAIState", (uint8)EAIState::Chase);
 
 }
 
-//void AMyMonAIController::FirstEncounterTarget(AController* Causer)
-//{
-//	APlayerCharacter* Player = Cast<APlayerCharacter>(Causer->GetCharacter());
-//
-//	if (Player)
-//	{
-//		Players.Add(Player);
-//
-//		BrainComponent->GetBlackboardComponent()->SetValueAsObject("TargetActor", Player);
-//		BrainComponent->GetBlackboardComponent()->SetValueAsEnum("MonAIState", uint8(EAIState::Chase));
-//
-//		AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
-//
-//		if (WyvernCharacter)
-//		{
-//			WyvernCharacter->MonAIState = EAIState::Chase;
-//		}
-//	}
-//}
-
-void AMyMonAIController::ShowMonsterHealthBar()
+void AMyMonAIController::CheckTargetActors()
 {
-	AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
-
-	if (LocalHud)
+	for (AActor* Target : TargetActors)
 	{
-		if (!LocalHud->IsShowHealthBar)
+		APlayerCharacter* Player = Cast<APlayerCharacter>(Target);
+		if (Player)
 		{
-
-			LocalHud->ShowMonsterHealthBar();
-			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(K2_GetPawn());
-			if (WyvernCharacter)
+			if (Player->EchoState == EPlayerState::EPS_Dead)
 			{
-				LocalHud->BindWyvernEvent(WyvernCharacter);
+				RemoveTargetActor(Player);
+				return CheckTargetActors();
+			}
+		}
+	}
+}
+
+
+
+void AMyMonAIController::ShowMonsterHealthBar(APlayerCharacter* Player)
+{
+	APlayerController* OwnerPC = Cast<APlayerController>(Player->GetController());
+	if (OwnerPC)
+	{
+		AMyHUD* LocalHud = Cast<AMyHUD>(OwnerPC->GetHUD());
+
+		if (LocalHud)
+		{
+			if (!LocalHud->IsShowHealthBar)
+			{
+
+				LocalHud->ShowMonsterHealthBar();
+				AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+				if (WyvernCharacter)
+				{
+					LocalHud->BindWyvernEvent(WyvernCharacter);
+				}
 			}
 		}
 	}

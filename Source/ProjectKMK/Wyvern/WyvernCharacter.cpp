@@ -325,9 +325,11 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 	if (MonAIState == EAIState::Patrol)
 	{
 		AMyMonAIController* MonController = Cast<AMyMonAIController>(GetController());
-		if (MonController)
+		APlayerCharacter* InstigatePlayer = Cast<APlayerCharacter>(InstigatedBy->GetPawn());
+		if (MonController && InstigatePlayer)
 		{
-			//MonController->FirstEncounterTarget(InstigatedBy);
+			MonController->AddTargetActor(InstigatePlayer);
+
 //			나중에 BT 전부 완성되면 ShowMonsterHealthBar() 를 WyvernCharacter 쪽으로 옮길거임
 			//if (Phase == EPhase::ThirdPhase)
 			//{
