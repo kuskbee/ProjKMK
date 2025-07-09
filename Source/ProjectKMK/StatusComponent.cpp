@@ -5,6 +5,7 @@
 #include "Net/UnrealNetwork.h"
 #include "UI/MyHUD.h"
 #include "Kismet/GameplayStatics.h"
+#include "InGameGameState.h"
 
 // Sets default values for this component's properties
 UStatusComponent::UStatusComponent()
@@ -78,21 +79,21 @@ void UStatusComponent::SetHp(float NewHp)
 
 void UStatusComponent::SetIsDead(bool bNewDeadStatus)
 {
-	if (GetOwner() && GetOwner()->HasAuthority())
+	if (GetOwner() && GetOwner()->HasAuthority()) //서버만 처리
 	{
-		if (bIsDead != bNewDeadStatus)
-		{
-			bIsDead = bNewDeadStatus;
-			OnDead.Broadcast(bIsDead);
+		bIsDead = bNewDeadStatus;
+		OnDead.Broadcast(bIsDead);
 
-			if (bIsDead)
+		if (bIsDead)
+		{
+			if (AInGameGameState* GS = GetWorld()->GetGameState<AInGameGameState>())
 			{
-				//DeadStatus
+				GS->SetCurrentGameState(EGameState::EGS_Lose);
 			}
-			else
-			{
-				//Revive
-			}
+		}
+		else
+		{
+			//Revive
 		}
 	}
 }
@@ -105,23 +106,6 @@ void UStatusComponent::OnRep_CurHp()
 void UStatusComponent::OnRep_IsDead()
 {
 	OnDead.Broadcast(bIsDead);
-
-	if (bIsDead)
-	{
-		if (APawn* OwningPawn = Cast<APawn>(GetOwner()))
-		{
-			if (OwningPawn->IsLocallyControlled())
-			{
-				if (APlayerController* LocalPlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-				{
-					if (AMyHUD* LocalHud = Cast<AMyHUD>(LocalPlayerController->GetHUD()))
-					{
-						LocalHud->EventChangeGameState(EGameState::EGS_Lose);
-					}
-				}
-			}
-		}
-	}
 }
 
 // Called when the game starts

@@ -19,7 +19,7 @@ void UHudWidget::DoGameOver()
 	GameLoseUI->SetVisibility(ESlateVisibility::Visible);
 }
 
-void UHudWidget::ShowMonsterHealthBar(bool bIsShowHealthBar)
+void UHudWidget::ShowMonsterHealthBar()
 {
 	MonsterHealthBar->SetVisibility(ESlateVisibility::Visible);
 }

@@ -38,7 +38,7 @@ public:
 
 	void DoGameOver();
 	
-	void ShowMonsterHealthBar(bool bIsShowHealthBar);
+	void ShowMonsterHealthBar();
 
 	void SetMonsterHpPercent(float CurHP, float MaxHP);
 	

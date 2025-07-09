@@ -95,6 +95,7 @@ void APlayerCharacter::BeginPlay()
 	{
 		SpawnWeapon();
 	}
+
 	BindEventStatusComponent();
 	InitializeTargetSystem();
 }
