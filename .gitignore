@@ -104,3 +104,40 @@ Content/VFX/*
 #Map
 Content/__ExternalActors__/*
 Content/__ExternalObjects__/*
+
+#Visual Studio
+*.user
+*.userosscache
+*.userprefs
+*.unsuccessfulbuild
+*.lastbuildstate
+*.ncb
+*.ipch/
+*.tlog/
+*.dbmdl
+*.psess
+*.vsp
+*.vspx
+*.log
+*.etl
+*.clog
+*.vsconfig
+*.ide
+*.pidb
+*.pdb
+*.iobj
+*.recipe
+*.ipdb
+*.ilk
+*.idb
+
+
+#  MYSQL
+TCPLoginServer/libcrypto-1_1-x64.dll
+TCPLoginServer/libssl-1_1-x64.dll
+TCPLoginServer/mysqlcppconn-9-vs14.dll
+TCPLoginServer/config.ini
+Libraries/mysqlConnector/*
+
+# Package
+Package/*

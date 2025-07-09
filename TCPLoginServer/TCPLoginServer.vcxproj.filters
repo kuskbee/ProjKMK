@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{b7668519-0b28-48ee-906e-88e912c88d8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocols">
+      <UniqueIdentifier>{15f0b482-0a7b-48af-ae18-7df52bad94e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DB">
+      <UniqueIdentifier>{09cc2cde-215b-41c3-853f-e501bfe5222d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\IniParser.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="DB\DatabaseManager.cpp">
+      <Filter>DB</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Utils\IniParser.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\UuidHelper.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="DB\DatabaseManager.h">
+      <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="server.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DB\DBQueryStatus.h">
+      <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerSession.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Protocols\LoginProtocol.fbs">
+      <Filter>Protocols</Filter>
+    </None>
+  </ItemGroup>
+</Project>
