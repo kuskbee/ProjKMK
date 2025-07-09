@@ -11,10 +11,16 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 #include "UITypes.h"
+#include "../InGameGameState.h"
 
 void AMyHUD::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (AInGameGameState* GS = GetWorld()->GetGameState<AInGameGameState>())
+	{
+		GS->OnGameStateChanged.AddDynamic(this, &AMyHUD::OnGameStateChanged);
+	}
 
 	FSoftClassPath HudWidgetPath(TEXT("/UiPlugin/CRPlugIn/Content/BluePrints/Widget/InGameHudWidget.InGameHudWidget_C"));
 
@@ -96,6 +102,8 @@ void AMyHUD::BindPlayerEvent(UStatusComponent* StatusComponent)
 	if (StatusComponent)
 	{
 		StatusComponent->OnChangeHp.AddDynamic(this, &AMyHUD::EventPlayerUpdateHP);
+
+		StatusComponent->OnDead.AddDynamic(this, &AMyHUD::OnPlayerDaed);
 	}
 }
 
@@ -106,4 +114,13 @@ void AMyHUD::EventPlayerUpdateHP(float CurHP, float MaxHP)
 	{
 		HudWidget->SetPlayerHpPercent(CurHP, MaxHP);
 	}
+}
+
+void AMyHUD::OnGameStateChanged(EGameState NewState)
+{
+	EventChangeGameState(NewState);
+}
+
+void AMyHUD::OnPlayerDaed(bool bDead)
+{
 }

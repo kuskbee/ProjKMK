@@ -7,6 +7,8 @@
 #include "UI/UITypes.h"
 #include "InGameGameState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, EGameState, NewState);
+
 /**
  * 
  */
@@ -27,6 +29,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Game State")
 	void SetCurrentGameState(EGameState NewState);
+
+	UPROPERTY(BlueprintAssignable, Category = "Game State")
+	FOnGameStateChanged OnGameStateChanged;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

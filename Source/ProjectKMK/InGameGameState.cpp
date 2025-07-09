@@ -17,7 +17,7 @@ void AInGameGameState::BeginPlay()
 	Super::BeginPlay();
 
 	//게임 시작 시 초기 상태 설정(현재 Ready 상태 - 주석처리)
-	/*if (HasAuthority)
+	/*if (HasAuthority())
 	{
 		SetCurrentGameState(EGameState::EGS_Ready);
 	}*/
@@ -33,19 +33,28 @@ void AInGameGameState::OnRep_CurrentGameState()
 			LocalHud->EventChangeGameState(CurrentGameState);
 		}
 	}
+
+	OnGameStateChanged.Broadcast(CurrentGameState);
 }
+
 void AInGameGameState::SetCurrentGameState(EGameState NewState)
 {
-	//서버에서만 호출
-	if (this->HasAuthority())
+	//서버에서만 상태 변경될 때만 호출
+	if (HasAuthority() && CurrentGameState != NewState)
 	{
-		//상태 변경될 때만 호출
-		if (CurrentGameState != NewState)
+		//서버에서 상태 변경
+		CurrentGameState = NewState;
+
+		//Listen Server 용도
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 		{
-			//서버에서 상태 변경
-			CurrentGameState = NewState;
-			OnRep_CurrentGameState();
-		}
+			if (AMyHUD* LocalHud = Cast<AMyHUD>(PC->GetHUD()))
+			{
+				LocalHud->EventChangeGameState(CurrentGameState);
+			}
+		}//Dedicated Server 사용 시 주석(삭제)처리할 것
+
+		OnGameStateChanged.Broadcast(CurrentGameState);
 	}
 }
 

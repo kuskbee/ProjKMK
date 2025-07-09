@@ -40,4 +40,10 @@ public:
 	bool IsShowHealthBar;
 
 	FTimerHandle DoGameWinTimerHandle;
+
+	UFUNCTION()
+	void OnGameStateChanged(EGameState NewState);
+
+	UFUNCTION()
+	void OnPlayerDaed(bool bDead);
 };
