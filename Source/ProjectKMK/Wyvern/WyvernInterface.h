@@ -3,21 +3,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Define.h"
+#include "UObject/Interface.h"
 #include "WyvernInterface.generated.h"
 /**
  * 
  */
 
-UINTERFACE(Blueprintable, meta = (CannotImplementInterfaceInBlueprint))
-class PROJECTKMK_API UWyvernInterface : public UInterface
+UINTERFACE(MinimalAPI)
+class UWyvernInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class IWyvernInterface
+class PROJECTKMK_API IWyvernInterface
 {
 	GENERATED_BODY()
 public:
-	virtual bool Attack();
+	virtual void Attack() = 0;
 };

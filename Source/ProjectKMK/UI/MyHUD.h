@@ -24,6 +24,7 @@ public:
 
 	void EventChangeGameState(EGameState GameState);
 
+	UFUNCTION()
 	void EventMonsterUpdateHP(float MaxHP, float WeaknessHP, float CurHP, float CurWeakHP);
 
 	void ShowMonsterHealthBar();

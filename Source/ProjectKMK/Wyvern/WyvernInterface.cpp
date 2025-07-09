@@ -2,8 +2,3 @@
 
 
 #include "WyvernInterface.h"
-
-bool IWyvernInterface::Attack()
-{
-	return false;
-}

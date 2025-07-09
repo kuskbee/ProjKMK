@@ -54,7 +54,6 @@ void AMyHUD::BindWyvernEvent(ACharacter* WyvernCharacter)
 	if (!MonStateComponent) return;
 
 	MonStateComponent->EventDispatcher_UpdateHP.AddDynamic(this, &AMyHUD::EventMonsterUpdateHP);
-
 	const FMyCurMonState& CurMonState = MonStateComponent->CurMonState;
 
 	EventMonsterUpdateHP(CurMonState.MonData.MaxHP, CurMonState.MonData.WeaknessHP, CurMonState.CurHP, CurMonState.CurWeakHP);

@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "WyvernInterface.h"
 #include "../Interfaces/CombatReactInterface.h"
+#include "ST_MyMonsterSkill.h"
 #include "Define.h"
 #include "MySurface.h"
 #include "WyvernCharacter.generated.h"
@@ -33,6 +34,12 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// WyvernInterface Implement
+	virtual void Attack() override;
+
+	// CombatReactInterface Implement
+	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
 
 public:	
 	// Called every frame
@@ -67,16 +74,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "AI", BlueprintReadWrite)
 	TObjectPtr<UBehaviorTree> WyvernBehaviorTree;
 
-	UFUNCTION(BlueprintCallable)
-	virtual bool Attack() override;
-
-	void RandomAttack(UDataTable* SkillDataTable, float InPlayerRate);
-
-	UFUNCTION(BlueprintCallable)
-	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
-
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcherAttackEnd EventAttackEnd;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void S2A_OnAttack(UAnimMontage* InAttackMontage, float InPlayerRate);
+	void S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate);
 
 	UFUNCTION()
 	void DoAttack(bool IsRightHand, bool IsMouth);
@@ -116,14 +119,8 @@ public:
 	UFUNCTION()
 	void DeadCollision();
 
-	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
-	EPhase Phase;
-
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	bool IsPlayMontage;
-
-	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
-	EAIState MonAIState;
 
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	float CurHP;
@@ -140,9 +137,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> RevivalMontage;
 
-	UPROPERTY(VisibleAnywhere, Category = "Animations", BlueprintReadOnly)
-	TObjectPtr<UAnimMontage> AttackMontage;
-
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> KnockBackMontage;
 
@@ -157,4 +151,15 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Effects", BlueprintReadWrite)
 	TObjectPtr<UParticleSystem> NotWeakAttackEffect;
+
+	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
+	EPhase Phase;
+
+	UPROPERTY(ReplicatedUsing=OnRep_MonAIState, VisibleAnywhere, Category = "Data", BlueprintReadOnly)
+	EAIState MonAIState;
+
+	UFUNCTION()
+	void OnRep_MonAIState();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
