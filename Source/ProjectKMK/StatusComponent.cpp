@@ -5,7 +5,7 @@
 #include "Net/UnrealNetwork.h"
 #include "UI/MyHUD.h"
 #include "Kismet/GameplayStatics.h"
-#include "InGameGameState.h"
+#include "KMKGameModeBase.h"
 
 // Sets default values for this component's properties
 UStatusComponent::UStatusComponent()
@@ -86,14 +86,10 @@ void UStatusComponent::SetIsDead(bool bNewDeadStatus)
 
 		if (bIsDead)
 		{
-			if (AInGameGameState* GS = GetWorld()->GetGameState<AInGameGameState>())
+			if (AKMKGameModeBase* GM = GetWorld()->GetAuthGameMode<AKMKGameModeBase>())
 			{
-				GS->SetCurrentGameState(EGameState::EGS_Lose);
+				GM->NotifyPlayerDead();
 			}
-		}
-		else
-		{
-			//Revive
 		}
 	}
 }

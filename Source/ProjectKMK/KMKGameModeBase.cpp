@@ -12,3 +12,18 @@ AKMKGameModeBase::AKMKGameModeBase()
 	DefaultPawnClass = APlayerCharacter::StaticClass();
 	GameStateClass = AInGameGameState::StaticClass();
 }
+
+void AKMKGameModeBase::NotifyPlayerDead()
+{
+	if (!HasAuthority()) return;
+
+	++TeamDeathCount;
+
+	if (TeamDeathCount > MaxTeamDeath)
+	{
+		if (AInGameGameState* GS = GetWorld()->GetGameState<AInGameGameState>())
+		{
+			GS->SetCurrentGameState(EGameState::EGS_Lose);
+		}
+	}
+}

@@ -15,4 +15,13 @@ class PROJECTKMK_API AKMKGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 public:
 	AKMKGameModeBase();
+
+
+	void NotifyPlayerDead();
+
+protected:
+	UPROPERTY()
+	int32 TeamDeathCount = 0;
+	UPROPERTY(EditDefaultsOnly)
+	int32 MaxTeamDeath = 3;
 };
