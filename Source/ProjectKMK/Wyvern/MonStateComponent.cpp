@@ -71,7 +71,6 @@ void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterP
 			break;
 		case EPhase::ThirdPhase:
 			CurMonState.CurHP = CurMonState.CurHP - Damage;
-			CurMonState.CurWeakHP = CurMonState.CurWeakHP;
 			break;
 		}
 
@@ -88,7 +87,7 @@ void UMonStateComponent::S2A_AddDamage_Implementation()
 		CurMonState.CurWeakHP
 	);
 
-	if (IsDeath(CurMonState))
+	if (IsDeath())
 	{
 		EventDispatcher_Death.Broadcast();
 	}
@@ -111,9 +110,19 @@ void UMonStateComponent::SetMonState(EPhase InPhase)
 	}
 }
 
-bool UMonStateComponent::IsDeath(FMyCurMonState State)
+bool UMonStateComponent::IsDeath()
 {
-	return (State.CurHP <= 0 || State.CurWeakHP <= 0);
+	return (CurMonState.CurHP <= 0 || CurMonState.CurWeakHP <= 0);
+}
+
+void UMonStateComponent::OnRep_CurMonState()
+{
+	EventDispatcher_UpdateHP.Broadcast(
+		CurMonState.MonData.MaxHP,
+		CurMonState.MonData.WeaknessHP,
+		CurMonState.CurHP,
+		CurMonState.CurWeakHP
+	);
 }
 
 void UMonStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

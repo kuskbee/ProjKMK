@@ -50,10 +50,4 @@ public:
 
 	UFUNCTION()
 	void CheckTargetActors();
-
-	UFUNCTION()
-	void ShowMonsterHealthBar(APlayerCharacter* InPlayer);
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TArray<TObjectPtr<AActor>> TargetActors;
 };

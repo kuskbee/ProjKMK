@@ -66,7 +66,7 @@ void AWyvernCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetMonState(Phase);
+	MonStateComponent->SetMonState(Phase);
 
 	MonStateComponent->EventDispatcher_Death.AddDynamic(this,
 		&AWyvernCharacter::DoDeath);
@@ -108,152 +108,300 @@ void AWyvernCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	InitAI(NewController);
 }
 
 void AWyvernCharacter::Attack()
 {
-	if (!IsPlayMontage)
+	TArray<FName> Names;
+	int RandomIndex;
+	FST_MyMonsterSkill* Skill;
+	UAnimMontage* AttackMontage;
+
+	switch (Phase)
 	{
-		TArray<FName> Names;
-		int RandomIndex;
-		FST_MyMonsterSkill* Skill;
-		UAnimMontage* AttackMontage;
-
-		switch (Phase)
+	case EPhase::FirstPhase:
+		if (FirstPhaseTable)
 		{
-		case EPhase::FirstPhase:
-			if (FirstPhaseTable)
+			Names = FirstPhaseTable->GetRowNames();
+			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+			Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
+			AttackMontage = Skill->SkillAnimMontage;
+			if (AttackMontage)
 			{
-				Names = FirstPhaseTable->GetRowNames();
-				RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-				Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
-				AttackMontage = Skill->SkillAnimMontage;
-				if (AttackMontage)
-				{
-					S2A_OnAttack(AttackMontage, 1.2f);
-				}
+				S2A_OnAttack(AttackMontage, 1.2f);
 			}
+		}
 
-			break;
+		break;
 
-		case EPhase::SecondPhase:
-			if (SecondPhaseTable)
+	case EPhase::SecondPhase:
+		if (SecondPhaseTable)
+		{
+			Names = SecondPhaseTable->GetRowNames();
+			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+			Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
+			AttackMontage = Skill->SkillAnimMontage;
+			if (AttackMontage)
 			{
-				Names = SecondPhaseTable->GetRowNames();
-				RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-				Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
-				AttackMontage = Skill->SkillAnimMontage;
-				if (AttackMontage)
-				{
-					S2A_OnAttack(AttackMontage, 1.2f);
-				}
+				S2A_OnAttack(AttackMontage, 1.2f);
 			}
+		}
 
-			break;
-		case EPhase::ThirdPhase:
-			if (ThirdPhaseTable)
+		break;
+	case EPhase::ThirdPhase:
+		if (ThirdPhaseTable)
+		{
+			Names = ThirdPhaseTable->GetRowNames();
+			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
+			Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
+			AttackMontage = Skill->SkillAnimMontage;
+			if (AttackMontage)
 			{
-				Names = ThirdPhaseTable->GetRowNames();
-				RandomIndex = FMath::RandRange(0, Names.Num() - 1);
-				Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
-				AttackMontage = Skill->SkillAnimMontage;
-				if (AttackMontage)
-				{
-					S2A_OnAttack(AttackMontage, 1.4f);
-				}
+				S2A_OnAttack(AttackMontage, 1.4f);
 			}
-			break;
+		}
+		break;
+	}
+}
+
+bool AWyvernCharacter::AddTargetActor(AActor* InTarget)
+{
+	if (TargetActors.Contains(InTarget))
+	{
+		return false;
+	}
+
+	TargetActors.Add(InTarget);
+
+	APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
+	if (PlayCharacter)
+	{
+		if (Phase == EPhase::ThirdPhase)
+		{
+			ShowMonsterHealthBar(PlayCharacter);
+		}
+	}
+	return true;
+}
+
+bool AWyvernCharacter::RemoveTargetActor(AActor* InTarget)
+{
+	if (!TargetActors.Contains(InTarget))
+	{
+		return false;
+	}
+
+	TargetActors.Remove(InTarget);
+
+	APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
+	if (PlayCharacter)
+	{
+		HideMonsterHealthBar(PlayCharacter);
+	}
+
+	return true;
+}
+
+AActor* AWyvernCharacter::ChangeTargetActor()
+{
+	if (TargetActors.Num() <= 1)
+	{
+		return nullptr;
+	}
+	AActor* NewTarget = TargetActors[(int)FMath::RandRange(0, TargetActors.Num() - 1)];
+	return NewTarget;
+}
+
+void AWyvernCharacter::CheckTargetActors()
+{
+	for (AActor* Target : TargetActors)
+	{
+		APlayerCharacter* Player = Cast<APlayerCharacter>(Target);
+		if (Player)
+		{
+			if (Player->EchoState == EPlayerState::EPS_Dead)
+			{
+				RemoveTargetActor(Player);
+				return CheckTargetActors();
+			}
 		}
 	}
 }
 
 void AWyvernCharacter::S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate)
 {
-	if (InAttackMontage)
+	if (!GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
 	{
-		PlayAnimMontage(InAttackMontage, InPlayerRate);
-
-		if (GetMesh()->GetAnimInstance()->Montage_IsPlaying(InAttackMontage))
+		if (InAttackMontage)
 		{
-			IsPlayMontage = true;
+			PlayAnimMontage(InAttackMontage, InPlayerRate);
+		}
+	}
+}
+
+void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
+{
+	FVector AttackLocation;
+	if (IsRightHand)
+	{
+		AttackLocation = GetMesh()->GetSocketLocation("rhand_socket");
+	}
+	else
+	{
+		if (IsMouth)
+		{
+			AttackLocation = GetMesh()->GetSocketLocation("mouth_socket");
 		}
 		else
 		{
-			EventMontageEnd(InAttackMontage, false);
+			AttackLocation = GetMesh()->GetSocketLocation("horn_socket");
 		}
 	}
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+
+	TArray<AActor*> ActorToIgnore;
+	ActorToIgnore.Add(this);
+
+	TArray<FHitResult> OutHits;
+	UKismetSystemLibrary::SphereTraceMultiForObjects(
+		GetWorld(),
+		AttackLocation,
+		AttackLocation,
+		250.0f,
+		ObjectTypes,
+		false,
+		ActorToIgnore,
+		EDrawDebugTrace::None,
+		OutHits,
+		true
+	);
+	for (FHitResult OutHit : OutHits)
+	{
+		if (OutHit.GetActor())
+		{
+			UGameplayStatics::ApplyDamage(
+				OutHit.GetActor(),
+				Damage,
+				GetController(),
+				this,
+				NULL
+			);
+
+			ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
+			if (Object)
+			{
+				Object->ApplyHit(OutHit, this);
+			}
+		}
+	}
+}
+
+void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float In_Damage,
+	AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection,
+	const UDamageType* DamageType, AActor* DamageCauser)
+{
+	if (MonAIState == EAIState::Patrol)
+	{
+		AMyMonAIController* MonController = Cast<AMyMonAIController>(GetController());
+		APlayerCharacter* InstigatePlayer = Cast<APlayerCharacter>(InstigatedBy->GetPawn());
+		if (MonController && InstigatePlayer)
+		{
+			MonController->AddTargetActor(InstigatePlayer);
+		}
+	}
+
+	MonStateComponent->AddDamage(In_Damage, BoneName, Phase);
 }
 
 bool AWyvernCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor)
 {
-	if (MonAIState != EAIState::Dead && MonAIState != EAIState::Runaway && MonAIState != EAIState::RunawayReady)
+	if (!MonStateComponent->IsDeath())
 	{
-		if (FMath::FRandRange(0.0f, 1.0f) <= 0.7f)
-		{
-			float RandomKnockbackPower = FMath::FRandRange(300.0f, 600.0f);
+		float WarpingPercent =  FMath::FRandRange(0.0f, 1.0f);
+		float RandomKnockbackPower = FMath::FRandRange(300.0f, 600.0f);
+		S2A_ApplyHit(HitResult, HitterActor, WarpingPercent, RandomKnockbackPower);
+	}
+	return true;
+}
 
-			MotionWarping->AddOrUpdateWarpTargetFromLocation(
-				FName("MonsterKnockbackMove"),
-				GetActorLocation() + ((GetActorLocation() - HitterActor->GetActorLocation()).Normalize(0.0001)
-					* RandomKnockbackPower));
-		}
-		else
-		{
-			MotionWarping->RemoveAllWarpTargets();
-		}
-
-		if (KnockBackMontage)
-		{
-			PlayAnimMontage(KnockBackMontage);
-		}
-
-		UGameplayStatics::PlayWorldCameraShake(
-			GetWorld(),
-			UMyLegacyCameraShake::StaticClass(),
-			GetActorLocation(),
-			0.0f,
-			3500.0f,
-			1.0f
-		);
-
-		if (IsWeakAttack(HitResult.BoneName))
-		{
-			if (WeakAttackEffect)
-			{
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeakAttackEffect, HitResult.ImpactPoint);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("WeakAttackEffect is null"));
-			}
-		}
-		else
-		{
-			if (NotWeakAttackEffect)
-			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), NotWeakAttackEffect, HitResult.ImpactPoint);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("NotWeakAttackEffect is null"));
-			}
-		}
-
-		return true;
+void AWyvernCharacter::S2A_ApplyHit_Implementation(const FHitResult& HitResult, AActor* HitterActor, float WarpingPercent, float RandomKnockbackPower)
+{
+	if (WarpingPercent <= 0.7f)
+	{
+		MotionWarping->AddOrUpdateWarpTargetFromLocation(
+			FName("MonsterKnockbackMove"),
+			GetActorLocation() + ((GetActorLocation() - HitterActor->GetActorLocation()).Normalize(0.0001)
+				* RandomKnockbackPower));
 	}
 	else
 	{
-		return false;
+		MotionWarping->RemoveAllWarpTargets();
+	}
+
+	if (KnockBackMontage)
+	{
+		UAnimInstance* Anim = GetMesh()->GetAnimInstance();
+
+		if (Anim && Anim->IsAnyMontagePlaying())
+		{
+			Anim->Montage_Stop(0.0f);
+		}
+
+		PlayAnimMontage(KnockBackMontage);
+	}
+
+	UGameplayStatics::PlayWorldCameraShake(
+		GetWorld(),
+		UMyLegacyCameraShake::StaticClass(),
+		GetActorLocation(),
+		0.0f,
+		3500.0f,
+		1.0f
+	);
+
+	if (IsWeakAttack(HitResult.BoneName))
+	{
+		if (WeakAttackEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeakAttackEffect, HitResult.ImpactPoint);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("WeakAttackEffect is null"));
+		}
+	}
+	else
+	{
+		if (NotWeakAttackEffect)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), NotWeakAttackEffect, HitResult.ImpactPoint);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("NotWeakAttackEffect is null"));
+		}
 	}
 }
 
-void AWyvernCharacter::SetMonState(EPhase InPhase)
+bool AWyvernCharacter::IsWeakAttack(FName BoneName)
 {
-	if (IsValid(MonStateComponent))
+	if (Phase == EPhase::FirstPhase)
 	{
-		MonStateComponent->SetMonState(InPhase);
+		return BoneName.Compare(GetMesh()->GetSocketBoneName("Bip001_Head")) == 0;
 	}
+	else if (Phase == EPhase::SecondPhase)
+	{
+		return (BoneName.Compare(GetMesh()->GetSocketBoneName("BN_Wynern_Tail_1")) == 0) ||
+			(BoneName.Compare(GetMesh()->GetSocketBoneName("BN_Wynern_Tail_5")) == 0);
+	}
+	else if (Phase == EPhase::ThirdPhase)
+	{
+		return false;
+	}
+	return false;
 }
 
 void AWyvernCharacter::CutTail(bool IsNotCut)
@@ -290,12 +438,12 @@ void AWyvernCharacter::CutTail(bool IsNotCut)
 				EDrawDebugTrace::None,
 				OutHit,
 				true
-			)){
+			)) {
 				TailSpawnPoint = OutHit.ImpactPoint + FVector(0, 0, 100.0f);
 			}
 
 			FActorSpawnParameters SpawnParams;
-			SpawnParams.SpawnCollisionHandlingOverride = 
+			SpawnParams.SpawnCollisionHandlingOverride =
 				ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 			FTransform SpawnTransform(FRotator(0.f, 0.f, 0.f), TailSpawnPoint, FVector(1.0f, 1.0f, 1.0f));
 			GetWorld()->SpawnActor<AActor>(
@@ -303,15 +451,67 @@ void AWyvernCharacter::CutTail(bool IsNotCut)
 				SpawnTransform,
 				SpawnParams
 			);
-				
+
 		}
 	}
 }
 
-void AWyvernCharacter::EventMontageEnd(UAnimMontage* Montage, bool bINterrupted)
+void AWyvernCharacter::DoDeath()
 {
-	IsPlayMontage = false;
-	EventAttackEnd.Broadcast();
+	GetController()->UnPossess();
+	S2A_DoDeath();
+}
+
+void AWyvernCharacter::S2A_DoDeath_Implementation()
+{
+	DeadCollision();
+
+	switch (Phase)
+	{
+	case EPhase::FirstPhase:
+		if (HowlingMontage)
+		{
+			MonAIState = EAIState::RunawayReady;
+			PlayAnimMontage(HowlingMontage);
+		}
+		break;
+
+	case EPhase::SecondPhase:
+		if (RevivalMontage)
+		{
+			MonAIState = EAIState::RunawayReady;
+			PlayAnimMontage(RevivalMontage);
+		}
+		break;
+
+	case EPhase::ThirdPhase:
+		if (DeadMontage)
+		{
+			MonAIState = EAIState::Dead;
+			PlayAnimMontage(DeadMontage);
+			if (HasAuthority())
+			{
+				if (AInGameGameState* InGameGameState = GetWorld()->GetGameState<AInGameGameState>())
+				{
+					InGameGameState->SetCurrentGameState(EGameState::EGS_Win);
+				}
+			}
+		}
+		break;
+	}
+
+	APlayerCharacter* PlayerChar = Cast<APlayerCharacter>
+		(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
+	if (PlayerChar)
+	{
+		//PlayerChar->ChangeCameraToAnotherView(); 아직 미구현 한준님 담당!
+	}
+}
+
+void AWyvernCharacter::DeadCollision()
+{
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AWyvernCharacter::EventUpdateMonPhase(EPhase In_Phase)
@@ -319,120 +519,49 @@ void AWyvernCharacter::EventUpdateMonPhase(EPhase In_Phase)
 	Phase = In_Phase;
 }
 
-void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float In_Damage,
-	AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, 
-	const UDamageType* DamageType, AActor* DamageCauser)
+void AWyvernCharacter::ShowMonsterHealthBar_Implementation(APlayerCharacter* InPlayer)
 {
-	if (MonAIState == EAIState::Patrol)
+	if (InPlayer->IsLocallyControlled())
 	{
-		AMyMonAIController* MonController = Cast<AMyMonAIController>(GetController());
-		APlayerCharacter* InstigatePlayer = Cast<APlayerCharacter>(InstigatedBy->GetPawn());
-		if (MonController && InstigatePlayer)
+		APlayerController* OwnerPC = Cast<APlayerController>(InPlayer->GetController());
+		//OwnerPC->CallEnCounter(this);
+
+		if (OwnerPC && OwnerPC == UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
-			MonController->AddTargetActor(InstigatePlayer);
-
-//			나중에 BT 전부 완성되면 ShowMonsterHealthBar() 를 WyvernCharacter 쪽으로 옮길거임
-			//if (Phase == EPhase::ThirdPhase)
-			//{
-			//	ShowMonsterHealthBar();
-			//}
-		}
-	}
-
-	MonStateComponent->AddDamage(In_Damage, BoneName, Phase);
-
-}
-
-void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
-{
-	FVector AttackLocation;
-	if (IsRightHand)
-	{
-		AttackLocation = GetMesh()->GetSocketLocation("rhand_socket");
-	}
-	else
-	{
-		if (IsMouth)
-		{
-			AttackLocation = GetMesh()->GetSocketLocation("mouth_socket");
-		}
-		else
-		{
-			AttackLocation = GetMesh()->GetSocketLocation("horn_socket");
-		}
-	}
-
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
-
-	TArray<AActor*> ActorToIgnore;
-	ActorToIgnore.Add(this);
-
-	FHitResult OutHit;
-	UKismetSystemLibrary::SphereTraceSingleForObjects(
-		GetWorld(),
-		AttackLocation,
-		AttackLocation,
-		250.0f,
-		ObjectTypes,
-		false,
-		ActorToIgnore,
-		EDrawDebugTrace::None,
-		OutHit,
-		true
-	);
-
-	if (OutHit.GetActor())
-	{
-		UGameplayStatics::ApplyDamage(
-			OutHit.GetActor(),
-			Damage,
-			GetController(),
-			this,
-			NULL
-		);
-
-		ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
-		if (Object)
-		{
-			Object->ApplyHit(OutHit, this);
+			AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
+			if (LocalHud)
+			{
+				if (!LocalHud->IsShowHealthBar)
+				{
+					LocalHud->ShowMonsterHealthBar();
+					LocalHud->BindWyvernEvent(this);
+				}
+			}
 		}
 	}
 }
 
-bool AWyvernCharacter::IsWeakAttack(FName BoneName)
+void AWyvernCharacter::HideMonsterHealthBar_Implementation(APlayerCharacter* InPlayer)
 {
-	if (Phase == EPhase::FirstPhase)
-	{
-		return BoneName.Compare(GetMesh()->GetSocketBoneName("Bip001_Head")) == 0;
-	}
-	else if (Phase == EPhase::SecondPhase)
-	{
-		return (BoneName.Compare(GetMesh()->GetSocketBoneName("BN_Wynern_Tail_1")) == 0) ||
-			(BoneName.Compare(GetMesh()->GetSocketBoneName("BN_Wynern_Tail_5")) == 0);
-	}
-	else if (Phase == EPhase::ThirdPhase)
-	{
-		return false;
-	}
-	return false;
-}
+	//APlayerController* OwnerPC = Cast<APlayerController>(InPlayer->GetController());
+	//if (OwnerPC)
+	//{
+	//	AMyHUD* LocalHud = Cast<AMyHUD>(OwnerPC->GetHUD());
 
-void AWyvernCharacter::InitAI(UObject* In_Controller)
-{
-	AMyMonAIController* MonAIController = Cast<AMyMonAIController>(In_Controller);
+	//	if (LocalHud)
+	//	{
+	//		if (!LocalHud->IsShowHealthBar)
+	//		{
 
-	if (MonAIController)
-	{
-		GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this,
-			&AWyvernCharacter::EventMontageEnd);
-	}
-}
-
-void AWyvernCharacter::UpdateWalkSpeed(float In_WalkSpeed)
-{
-	GetCharacterMovement()->MaxWalkSpeed = In_WalkSpeed;
+	//			LocalHud->ShowMonsterHealthBar();
+	//			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+	//			if (WyvernCharacter)
+	//			{
+	//				//LocalHud->UnBindWyvernEvent(WyvernCharacter);
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 bool AWyvernCharacter::IsMonsterMovable()
@@ -467,66 +596,16 @@ bool AWyvernCharacter::IsMonsterMovable()
 	return IsMovable;
 }
 
-void AWyvernCharacter::DoDeath()
+void AWyvernCharacter::OnRep_Phase()
 {
-	DeadCollision();
-
 	switch (Phase)
 	{
 	case EPhase::FirstPhase:
-		if (HowlingMontage)
-		{
-			MonAIState = EAIState::RunawayReady;
-			PlayAnimMontage(HowlingMontage);
-			IsPlayMontage = true;
-		}
-
 		break;
-
 	case EPhase::SecondPhase:
-		if (RevivalMontage)
-		{
-			MonAIState = EAIState::RunawayReady;
-			PlayAnimMontage(RevivalMontage);
-			IsPlayMontage = true;
-		}
-
 		break;
-
 	case EPhase::ThirdPhase:
-		if (DeadMontage)
-		{
-			MonAIState = EAIState::Dead;
-			PlayAnimMontage(DeadMontage);
-			if (HasAuthority())
-			{
-				if (AInGameGameState* InGameGameState = GetWorld()->GetGameState<AInGameGameState>())
-				{
-					InGameGameState->SetCurrentGameState(EGameState::EGS_Win);
-				}
-			}
-		}
-
 		break;
-	}
-
-	APlayerCharacter* PlayerChar = Cast<APlayerCharacter>
-		(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
-	if (PlayerChar)
-	{
-		//PlayerChar->ChangeCameraToAnotherView(); 아직 미구현 한준님 담당!
-	}
-}
-
-void AWyvernCharacter::DeadCollision()
-{
-	AController* MyController = GetController();
-	if (MyController)
-	{
-		MyController->UnPossess();
-
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }
 
@@ -552,4 +631,5 @@ void AWyvernCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWyvernCharacter, MonAIState);
+	DOREPLIFETIME(AWyvernCharacter, Phase);
 }

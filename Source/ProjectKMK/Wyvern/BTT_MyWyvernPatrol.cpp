@@ -6,6 +6,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 #include "WyvernCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "NavigationSystem.h"
 
 
@@ -17,7 +18,7 @@ EBTNodeResult::Type UBTT_MyWyvernPatrol::ExecuteTask(UBehaviorTreeComponent& Own
 
 	if (WyvernChar)
 	{
-		WyvernChar->UpdateWalkSpeed(PatrolSpeed);
+		WyvernChar->GetCharacterMovement()->MaxWalkSpeed = PatrolSpeed;
 
 		FNavLocation RandomLocation;
 		UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
