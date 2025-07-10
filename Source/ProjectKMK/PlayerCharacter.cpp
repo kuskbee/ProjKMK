@@ -186,6 +186,37 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	return 0.0f;
 }
 
+void APlayerCharacter::RespawnCharacter(FVector NewLocation, FRotator NewRotation)
+{
+	SetActorLocation(NewLocation);
+	SetActorRotation(NewRotation);
+
+	if (StatusComponent)
+	{
+		StatusComponent->InitializeStatus();
+	}
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->StopAllMontages(0.2f);
+	}
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	if (GetCharacterMovement()->MovementMode == MOVE_None)
+	{
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	}
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		EnableInput(PC);
+	}
+
+	EchoState = EPlayerState::EPS_Locomotion;
+}
+
 void APlayerCharacter::BindEventStatusComponent()
 {
 	StatusComponent->OnDead.AddDynamic(this, &APlayerCharacter::DoDeath);

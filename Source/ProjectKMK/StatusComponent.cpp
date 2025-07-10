@@ -6,6 +6,8 @@
 #include "UI/MyHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "KMKGameModeBase.h"
+#include "KMKPlayerController.h"
+#include "PlayerCharacter.h"
 
 // Sets default values for this component's properties
 UStatusComponent::UStatusComponent()
@@ -26,6 +28,7 @@ void UStatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(UStatusComponent, MaxHp);
 	DOREPLIFETIME(UStatusComponent, CurHp);
 	DOREPLIFETIME(UStatusComponent, bIsDead);
 }
@@ -36,6 +39,7 @@ void UStatusComponent::InitializeStatus()
 	{
 		CurHp = MaxHp;
 		bIsDead = false;
+		bHasBeenDead = false;
 
 		OnChangeHp.Broadcast(CurHp, MaxHp);
 	}
@@ -81,14 +85,25 @@ void UStatusComponent::SetIsDead(bool bNewDeadStatus)
 {
 	if (GetOwner() && GetOwner()->HasAuthority()) //서버만 처리
 	{
-		bIsDead = bNewDeadStatus;
-		OnDead.Broadcast(bIsDead);
-
-		if (bIsDead)
+		if (bIsDead != bNewDeadStatus)
 		{
-			if (AKMKGameModeBase* GM = GetWorld()->GetAuthGameMode<AKMKGameModeBase>())
+			bIsDead = bNewDeadStatus;
+			OnDead.Broadcast(bIsDead);
+
+			if (bIsDead && !bHasBeenDead)
 			{
-				GM->NotifyPlayerDead();
+				bHasBeenDead = true;
+
+				if (AKMKGameModeBase* GM = GetWorld()->GetAuthGameMode<AKMKGameModeBase>())
+				{
+					if (ACharacter* OwningCharacter = Cast<ACharacter>(GetOwner()))
+					{
+						if (AKMKPlayerController* PC = Cast<AKMKPlayerController>(OwningCharacter->GetController()))
+						{
+							GM->NotifyPlayerDead(PC);
+						}
+					}
+				}
 			}
 		}
 	}

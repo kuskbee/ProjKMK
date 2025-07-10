@@ -49,6 +49,9 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser);
 	
+	UFUNCTION(BlueprintCallable, Category = "Character")
+	void RespawnCharacter(FVector NewLocation, FRotator NewRotation);
+
 protected:
 
 	// Bind Event
