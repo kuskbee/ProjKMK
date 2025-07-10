@@ -10,6 +10,7 @@ AInGameGameState::AInGameGameState()
 {
 	bReplicates = true;
 	CurrentGameState = EGameState::EGS_None;
+	ReplicatedTeamDeathCount = 0;
 }
 
 void AInGameGameState::BeginPlay()
@@ -58,9 +59,17 @@ void AInGameGameState::SetCurrentGameState(EGameState NewState)
 	}
 }
 
+void AInGameGameState::OnRep_ReplicatedTeamDeathCount()
+{
+	//HUD & UI 팀 데스 카운트 업데이트 시 로직 추가
+
+	OnTeamDeathCountChanged.Broadcast(ReplicatedTeamDeathCount);
+}
+
 void AInGameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AInGameGameState, CurrentGameState);
+	DOREPLIFETIME(AInGameGameState, ReplicatedTeamDeathCount);
 }

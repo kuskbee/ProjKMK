@@ -36,11 +36,13 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_CurHp, EditAnywhere, BlueprintReadOnly)
 	float CurHp = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	float MaxHp = 1000.0f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead, EditAnywhere, BlueprintReadOnly)
 	bool bIsDead = false;
+	UPROPERTY()
+	bool bHasBeenDead = false;
 
 	//RepNotify Functions
 	UFUNCTION()
