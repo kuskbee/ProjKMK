@@ -80,6 +80,34 @@ public:
 	void S2A_OnAttack(UAnimMontage* InAttackMontage, float InPlayerRate);
 	void S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate);
 
+	UFUNCTION()
+	void DoAttack(bool IsRightHand, bool IsMouth);
+
+	UFUNCTION()
+	void EventProcessTakePointDamage(AActor* DamagedActor, float In_Damage, class AController* InstigatedBy,
+		FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection,
+		const class UDamageType* DamageType, AActor* DamageCauser);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void S2A_ApplyHit(const FHitResult& HitResult, AActor* HitterActor, float WarpingPercent, float RandomKnockbackPower);
+	void S2A_ApplyHit_Implementation(const FHitResult& HitResult, AActor* HitterActor, float WarpingPercent, float RandomKnockbackPower);
+
+	UFUNCTION()
+	bool IsWeakAttack(FName BoneName);
+
+	UFUNCTION()
+	void CutTail(bool IsNotCut);
+
+	UFUNCTION()
+	void DoDeath();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void S2A_DoDeath();
+	void S2A_DoDeath_Implementation();
+
+	UFUNCTION()
+	void DeadCollision();
+
 	// Targeting System
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<AActor>> TargetActors;
@@ -94,33 +122,10 @@ public:
 	//
 
 	UFUNCTION()
-	void DoAttack(bool IsRightHand, bool IsMouth);
-
-	UFUNCTION()
-	void CutTail(bool IsNotCut);
-
-	UFUNCTION()
 	void EventUpdateMonPhase(EPhase In_Phase);
 
 	UFUNCTION()
-	void EventProcessTakePointDamage(AActor* DamagedActor, float In_Damage, class AController* InstigatedBy,
-		FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, 
-		const class UDamageType* DamageType, AActor* DamageCauser);
-
-	UFUNCTION()
-	bool IsWeakAttack(FName BoneName);
-
-	UFUNCTION()
-	void UpdateWalkSpeed(float NewWalkSpeed);
-
-	UFUNCTION()
 	bool IsMonsterMovable();
-
-	UFUNCTION()
-	void DoDeath();
-
-	UFUNCTION()
-	void DeadCollision();
 
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	float CurHP;

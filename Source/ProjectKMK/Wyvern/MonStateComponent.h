@@ -31,7 +31,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UPROPERTY(Replicated, EditAnywhere, Category = "Data", BlueprintReadWrite)
+	UPROPERTY(ReplicatedUsing=OnRep_CurMonState, EditAnywhere, Category = "Data", BlueprintReadWrite)
 	struct FMyCurMonState CurMonState;
 
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
@@ -58,7 +58,10 @@ public:
 	void SetMonState(EPhase InPhase);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool IsDeath(FMyCurMonState State);
+	bool IsDeath();
+
+	UFUNCTION()
+	void OnRep_CurMonState();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -6,6 +6,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 #include "WyvernCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 EBTNodeResult::Type UBTT_MyWyvernChaseTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -19,7 +20,8 @@ EBTNodeResult::Type UBTT_MyWyvernChaseTarget::ExecuteTask(UBehaviorTreeComponent
         AWyvernCharacter* WyvernChar = Cast<AWyvernCharacter>(OwnerComp.GetAIOwner()->GetPawn());
         if (WyvernChar)
         {
-            WyvernChar->UpdateWalkSpeed(ChaseSpeed);
+
+            WyvernChar->GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed;
             return EBTNodeResult::Succeeded;
         }
     }

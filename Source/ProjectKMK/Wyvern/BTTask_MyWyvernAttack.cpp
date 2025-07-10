@@ -20,5 +20,4 @@ EBTNodeResult::Type UBTTask_MyWyvernAttack::ExecuteTask(UBehaviorTreeComponent& 
     }
 
     return EBTNodeResult::Failed;
-
 }
