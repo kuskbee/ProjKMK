@@ -4,13 +4,13 @@
 #include "BTTask_MyWyvernAttack.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "AIController.h"
-#include "WyvernInterface.h"
+#include "MonsterInterface.h"
 
 EBTNodeResult::Type UBTTask_MyWyvernAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
     Super::ExecuteTask(OwnerComp, NodeMemory);
 
-    IWyvernInterface* WyvernChar = Cast<IWyvernInterface>(OwnerComp.GetAIOwner()->GetPawn());
+    IMonsterInterface* WyvernChar = Cast<IMonsterInterface>(OwnerComp.GetAIOwner()->GetPawn());
 
     if (WyvernChar)
     {

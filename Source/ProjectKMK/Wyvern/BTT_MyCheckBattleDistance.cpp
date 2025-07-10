@@ -31,7 +31,10 @@ EBTNodeResult::Type UBTT_MyCheckBattleDistance::ExecuteTask(UBehaviorTreeCompone
 				return EBTNodeResult::Succeeded;
 			}
 		}
-
+	}
+	else
+	{
+		// 만약 UBTService_UpdateAttackTarget의 tick의 간격을 줄이고, 어그로 시스템을 추가하면, 여기서 TargetActor가 Is Not Valid 했을때 MonAIState를 Change 해줄 필요가 없는데..
 	}
 
 	return EBTNodeResult::Failed;

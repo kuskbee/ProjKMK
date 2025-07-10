@@ -89,7 +89,7 @@ void AMyBreath::BreathDamage()
 		500.0f
 	);
 
-	for (FHitResult OutHit : OutHits)
+	for (struct FHitResult OutHit : OutHits)
 	{
 		if (OutHit.GetActor())
 		{

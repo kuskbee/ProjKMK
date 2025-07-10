@@ -167,6 +167,71 @@ void AWyvernCharacter::Attack()
 	}
 }
 
+bool AWyvernCharacter::AddTargetActor(AActor* InTarget)
+{
+	if (TargetActors.Contains(InTarget))
+	{
+		return false;
+	}
+
+	TargetActors.Add(InTarget);
+
+	APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
+	if (PlayCharacter)
+	{
+		if (Phase == EPhase::ThirdPhase)
+		{
+			ShowMonsterHealthBar(PlayCharacter);
+		}
+	}
+	return true;
+}
+
+bool AWyvernCharacter::RemoveTargetActor(AActor* InTarget)
+{
+	if (!TargetActors.Contains(InTarget))
+	{
+		return false;
+	}
+
+	TargetActors.Remove(InTarget);
+
+	APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
+	if (PlayCharacter)
+	{
+		HideMonsterHealthBar(PlayCharacter);
+	}
+
+	return true;
+}
+
+AActor* AWyvernCharacter::ChangeTargetActor()
+{
+	if (TargetActors.Num() <= 1)
+	{
+		return nullptr;
+	}
+	AActor* NewTarget = TargetActors[(int)FMath::RandRange(0, TargetActors.Num() - 1)];
+	return NewTarget;
+}
+
+void AWyvernCharacter::CheckTargetActors()
+{
+	for (AActor* Target : TargetActors)
+	{
+		APlayerCharacter* Player = Cast<APlayerCharacter>(Target);
+		if (Player)
+		{
+			if (Player->EchoState == EPlayerState::EPS_Dead)
+			{
+				RemoveTargetActor(Player);
+				return CheckTargetActors();
+			}
+		}
+	}
+}
+
+
 void AWyvernCharacter::S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate)
 {
 	if (InAttackMontage)
@@ -313,6 +378,51 @@ void AWyvernCharacter::EventProcessTakePointDamage(AActor* DamagedActor, float I
 
 }
 
+void AWyvernCharacter::ShowMonsterHealthBar_Implementation(APlayerCharacter* InPlayer)
+{
+	if (InPlayer->IsLocallyControlled())
+	{
+		APlayerController* OwnerPC = Cast<APlayerController>(InPlayer->GetController());
+		//OwnerPC->CallEnCounter(this);
+
+		if (OwnerPC && OwnerPC == UGameplayStatics::GetPlayerController(GetWorld(), 0))
+		{
+			AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
+			if (LocalHud)
+			{
+				if (!LocalHud->IsShowHealthBar)
+				{
+					LocalHud->ShowMonsterHealthBar();
+					LocalHud->BindWyvernEvent(this);
+				}
+			}
+		}
+	}
+}
+
+void AWyvernCharacter::HideMonsterHealthBar_Implementation(APlayerCharacter* InPlayer)
+{
+	//APlayerController* OwnerPC = Cast<APlayerController>(InPlayer->GetController());
+	//if (OwnerPC)
+	//{
+	//	AMyHUD* LocalHud = Cast<AMyHUD>(OwnerPC->GetHUD());
+
+	//	if (LocalHud)
+	//	{
+	//		if (!LocalHud->IsShowHealthBar)
+	//		{
+
+	//			LocalHud->ShowMonsterHealthBar();
+	//			AWyvernCharacter* WyvernCharacter = Cast<AWyvernCharacter>(GetPawn());
+	//			if (WyvernCharacter)
+	//			{
+	//				//LocalHud->UnBindWyvernEvent(WyvernCharacter);
+	//			}
+	//		}
+	//	}
+	//}
+}
+
 void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 {
 	FVector AttackLocation;
@@ -352,7 +462,7 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 		OutHits,
 		true
 	);
-	for (FHitResult OutHit : OutHits)
+	for (struct FHitResult OutHit : OutHits)
 	{
 		if (OutHit.GetActor())
 		{

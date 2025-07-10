@@ -50,16 +50,4 @@ public:
 
 	UFUNCTION()
 	void CheckTargetActors();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void ShowMonsterHealthBar(APlayerCharacter* InPlayer);
-	void ShowMonsterHealthBar_Implementation(APlayerCharacter* InPlayer);
-
-	UFUNCTION()
-	void HideMonsterHealthBar(APlayerCharacter* InPlayer);
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TArray<TObjectPtr<AActor>> TargetActors;
-
-	bool IsPlayAnimMontage;
 };

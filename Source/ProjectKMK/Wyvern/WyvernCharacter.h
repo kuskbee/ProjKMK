@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "WyvernInterface.h"
+#include "MonsterInterface.h"
 #include "../Interfaces/CombatReactInterface.h"
 #include "ST_MyMonsterSkill.h"
 #include "Define.h"
-#include "MySurface.h"
 #include "WyvernCharacter.generated.h"
 
 class USpringArmComponent;
@@ -19,9 +18,10 @@ class UAnimMontage;
 class UBehaviorTree;
 class UNiagaraSystem;
 class UParticleSystem;
+class AMySurface;
 
 UCLASS()
-class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IWyvernInterface, public ICombatReactInterface
+class PROJECTKMK_API AWyvernCharacter : public ACharacter, public IMonsterInterface, public ICombatReactInterface
 {
 	GENERATED_BODY()
 
@@ -35,6 +35,10 @@ protected:
 
 	// WyvernInterface Implement
 	virtual void Attack() override;
+	virtual bool AddTargetActor(AActor* InTarget) override;
+	virtual bool RemoveTargetActor(AActor* InTarget) override;
+	virtual AActor* ChangeTargetActor() override;
+	virtual void CheckTargetActors() override;
 
 	// CombatReactInterface Implement
 	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
@@ -75,6 +79,19 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void S2A_OnAttack(UAnimMontage* InAttackMontage, float InPlayerRate);
 	void S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate);
+
+	// Targeting System
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<AActor>> TargetActors;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ShowMonsterHealthBar(APlayerCharacter* InPlayer);
+	void ShowMonsterHealthBar_Implementation(APlayerCharacter* InPlayer);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void HideMonsterHealthBar(APlayerCharacter* InPlayer);
+	void HideMonsterHealthBar_Implementation(APlayerCharacter* InPlayer);
+	//
 
 	UFUNCTION()
 	void DoAttack(bool IsRightHand, bool IsMouth);
