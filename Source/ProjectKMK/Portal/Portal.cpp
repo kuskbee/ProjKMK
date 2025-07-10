@@ -83,7 +83,7 @@ void APortal::EnterOpening(AAltar* _Altar)
 		APlayerCharacter* Player = Cast<APlayerCharacter>(PC->GetPawn());
 		if (IsValid(Player) && IsValid(PortalCamera))
 		{
-			// :PORTAL:  ChangeCameraToAnotherView
+			Player->ChangeCameraToAnotherView(PortalCamera, 3.0f);
 		}
 	}
 }

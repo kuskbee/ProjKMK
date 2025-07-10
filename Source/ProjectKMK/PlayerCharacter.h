@@ -157,6 +157,14 @@ protected:
 	void SetTargetModeCamera();
 
 public:
+	UFUNCTION()
+	void ChangeCameraToAnotherView(AActor* NewViewTarget, float DelayTime);
+
+	UFUNCTION()
+	void ChangeCameraToPlayerView();
+
+
+public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<USpringArmComponent> CameraBoom;
 
@@ -281,6 +289,9 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "HoldTail")
 	TObjectPtr<AActor> HoldTail;
+
+	//
+	FTimerHandle CameraSwitchHandle;
 
 public:
 	__forceinline AWeaponBase* GetEquippedWeapon() { return EquippedWeapon; }

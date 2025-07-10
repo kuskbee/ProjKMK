@@ -504,7 +504,7 @@ void AWyvernCharacter::S2A_DoDeath_Implementation()
 		(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
 	if (PlayerChar)
 	{
-		//PlayerChar->ChangeCameraToAnotherView(); 아직 미구현 한준님 담당!
+		PlayerChar->ChangeCameraToAnotherView(this, 5.0f);
 	}
 }
 
@@ -607,6 +607,7 @@ void AWyvernCharacter::OnRep_Phase()
 	case EPhase::ThirdPhase:
 		break;
 	}
+
 }
 
 void AWyvernCharacter::OnRep_MonAIState()

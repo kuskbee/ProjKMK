@@ -3,11 +3,11 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class ProjectKMKEditorTarget : TargetRules
+public class ProjectKMKServerTarget : TargetRules
 {
-	public ProjectKMKEditorTarget(TargetInfo Target) : base(Target)
+	public ProjectKMKServerTarget(TargetInfo Target) : base(Target)
 	{
-		Type = TargetType.Editor;
+		Type = TargetType.Server;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_5;
 		ExtraModuleNames.AddRange( new string[] { "ProjectKMK" } );

@@ -32,6 +32,10 @@
 		{
 			"Name": "EchoCharacterPlugin",
 			"Enabled": true
+		},
+		{
+			"Name": "HairStrands",
+			"Enabled": true
 		}
 	]
 }
