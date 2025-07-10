@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyDefine.h"
+#include "Define.h"
 #include "Engine/DataTable.h"
 #include "MyMonState.generated.h"
 /**

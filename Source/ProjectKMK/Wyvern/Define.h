@@ -3,7 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyDefine.generated.h"
+#include "Engine/DataTable.h"
+#include "Define.generated.h"
 
 /**
  * 

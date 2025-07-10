@@ -4,23 +4,24 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
 #include "MyMonState.h"
 #include "MyCurMonState.h"
-#include "MyDefine.h"
-#include "MyMonStateComponent.generated.h"
+
+#include "MonStateComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEventDispatcher_MonState, FMyCurMonState, Monster);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FEventDispatcher_UpdateHP, float, MaxHP, float, WeaknessHP, float, CurHP, float, CurWeakHP);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEventDispatcher_Death);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Blueprintable )
-class PROJECTKMK_API UMyMonStateComponent : public UActorComponent
+class PROJECTKMK_API UMonStateComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UMyMonStateComponent();
+	UMonStateComponent();
 
 protected:
 	// Called when the game starts

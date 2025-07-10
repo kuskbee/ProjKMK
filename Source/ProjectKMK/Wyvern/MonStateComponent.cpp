@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyMonStateComponent.h"
+#include "MonStateComponent.h"
 #include "WyvernCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
-UMyMonStateComponent::UMyMonStateComponent()
+UMonStateComponent::UMonStateComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -19,7 +19,7 @@ UMyMonStateComponent::UMyMonStateComponent()
 
 
 // Called when the game starts
-void UMyMonStateComponent::BeginPlay()
+void UMonStateComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -29,7 +29,7 @@ void UMyMonStateComponent::BeginPlay()
 
 
 // Called every frame
-void UMyMonStateComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UMonStateComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -37,7 +37,7 @@ void UMyMonStateComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 }
 
-void UMyMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterPhase)
+void UMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase MonsterPhase)
 {
 	AWyvernCharacter* Character = Cast<AWyvernCharacter>(GetOwner());
 	if (IsValid(Character))
@@ -78,7 +78,7 @@ void UMyMonStateComponent::AddDamage(float Damage, FName BoneName, EPhase Monste
 	}
 }
 
-void UMyMonStateComponent::S2A_AddDamage_Implementation()
+void UMonStateComponent::S2A_AddDamage_Implementation()
 {
 	EventDispatcher_UpdateHP.Broadcast(
 		CurMonState.MonData.MaxHP,
@@ -93,7 +93,7 @@ void UMyMonStateComponent::S2A_AddDamage_Implementation()
 	}
 }
 
-void UMyMonStateComponent::SetMonState(EPhase InPhase)
+void UMonStateComponent::SetMonState(EPhase InPhase)
 {
 	if (MonStateDataTable)
 	{
@@ -110,12 +110,12 @@ void UMyMonStateComponent::SetMonState(EPhase InPhase)
 	}
 }
 
-bool UMyMonStateComponent::IsDeath()
+bool UMonStateComponent::IsDeath()
 {
 	return (CurMonState.CurHP <= 0 || CurMonState.CurWeakHP <= 0);
 }
 
-void UMyMonStateComponent::OnRep_CurMonState()
+void UMonStateComponent::OnRep_CurMonState()
 {
 	EventDispatcher_UpdateHP.Broadcast(
 		CurMonState.MonData.MaxHP,
@@ -125,11 +125,11 @@ void UMyMonStateComponent::OnRep_CurMonState()
 	);
 }
 
-void UMyMonStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void UMonStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UMyMonStateComponent, CurMonState);
+	DOREPLIFETIME(UMonStateComponent, CurMonState);
 
 }
 

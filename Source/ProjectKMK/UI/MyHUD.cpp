@@ -3,7 +3,7 @@
 
 #include "MyHUD.h"
 #include "GameFramework/Character.h"
-#include "../Wyvern\MyMonStateComponent.h"
+#include "../Wyvern\MonStateComponent.h"
 #include "../Wyvern\MyCurMonState.h"
 #include "../StatusComponent.h"
 #include "HudWidget.h"
@@ -56,7 +56,7 @@ void AMyHUD::BindWyvernEvent(ACharacter* WyvernCharacter)
 {
 	if (!WyvernCharacter) return;
 
-	UMyMonStateComponent* MonStateComponent = WyvernCharacter->FindComponentByClass<UMyMonStateComponent>();
+	UMonStateComponent* MonStateComponent = WyvernCharacter->FindComponentByClass<UMonStateComponent>();
 	if (!MonStateComponent) return;
 
 	MonStateComponent->EventDispatcher_UpdateHP.AddDynamic(this, &AMyHUD::EventMonsterUpdateHP);
