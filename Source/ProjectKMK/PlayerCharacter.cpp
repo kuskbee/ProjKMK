@@ -19,6 +19,7 @@
 #include "Player/TargetingSystemComponent.h"
 #include "Interfaces/TailInterface.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -870,4 +871,34 @@ void APlayerCharacter::SetTargetModeCamera()
 
 	// 화면 가까이
 	CameraBoom->TargetArmLength = 150.f;
+}
+
+void APlayerCharacter::ChangeCameraToAnotherView(AActor* NewViewTarget, float DelayTime)
+{
+	if (!NewViewTarget) return;
+
+	// 플레이어 컨트롤러
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (!PC || PC != GetController()) return;
+
+	// 지정한 카메라로 View Target 전환 (블렌드 타임 0.5초)
+	PC->SetViewTargetWithBlend(NewViewTarget, 0.5f, EViewTargetBlendFunction::VTBlend_Linear, 0.0f, false);
+
+	// DelayTime 이후에 ChangeCameraToPlayerView() 호출
+	GetWorld()->GetTimerManager().SetTimer(
+		CameraSwitchHandle,
+		this,
+		&APlayerCharacter::ChangeCameraToPlayerView,
+		DelayTime,
+		false  // 한 번만 실행
+	);
+}
+
+void APlayerCharacter::ChangeCameraToPlayerView()
+{
+	// 다시 자기 자신(Self, 즉 이 액터)을 View Target으로 전환
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (!PC) return;
+
+	PC->SetViewTargetWithBlend(this, 0.5f, EViewTargetBlendFunction::VTBlend_Linear, 0.0f, false);
 }
