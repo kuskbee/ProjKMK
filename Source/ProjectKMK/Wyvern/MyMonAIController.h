@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "Perception/AIPerceptionTypes.h"
-#include "Define.h"
+#include "MyDefine.h"
 #include "MyMonAIController.generated.h"
 
 /**

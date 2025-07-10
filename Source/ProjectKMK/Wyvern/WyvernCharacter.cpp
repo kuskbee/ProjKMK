@@ -6,7 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "MotionWarpingComponent.h"
-#include "MonStateComponent.h"
+#include "MyMonStateComponent.h"
 #include "ST_MyMonsterSkill.h"
 #include "Animation/AnimMontage.h"
 #include "MySurface.h"
@@ -52,7 +52,7 @@ AWyvernCharacter::AWyvernCharacter()
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
 
-	MonStateComponent = CreateDefaultSubobject<UMonStateComponent>(TEXT("MonStateComponent"));
+	MonStateComponent = CreateDefaultSubobject<UMyMonStateComponent>(TEXT("MonStateComponent"));
 
 	bUseControllerRotationYaw = false;
 
@@ -66,10 +66,14 @@ void AWyvernCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MonStateComponent->SetMonState(Phase);
+	if (MonStateComponent)
+	{
+		MonStateComponent->SetMonState(Phase);
 
-	MonStateComponent->EventDispatcher_Death.AddDynamic(this,
-		&AWyvernCharacter::DoDeath);
+		MonStateComponent->EventDispatcher_Death.AddDynamic(this,
+			&AWyvernCharacter::DoDeath);
+	}
+	
 
 	OnTakePointDamage.AddDynamic(this,
 		&AWyvernCharacter::EventProcessTakePointDamage);
