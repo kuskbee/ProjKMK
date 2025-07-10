@@ -65,15 +65,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	TObjectPtr<UParticleSystem> VFX_ClosingTemplate;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Portal")
 	FString NextLevelName;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Portal")
 	EPortalState PortalState;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")
 	TObjectPtr<AAltar> Altar;
 
-	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")
 	TObjectPtr<ACameraActor> PortalCamera;
 };

@@ -4,7 +4,7 @@
 #include "AnimNotify_MySecondRunaway.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "WyvernCharacter.h"
-#include "Define.h"
+#include "MyDefine.h"
 
 void UAnimNotify_MySecondRunaway::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {

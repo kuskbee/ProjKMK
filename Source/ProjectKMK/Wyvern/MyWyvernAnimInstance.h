@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "Define.h"
+#include "MyDefine.h"
 #include "MyWyvernAnimInstance.generated.h"
 
 /**

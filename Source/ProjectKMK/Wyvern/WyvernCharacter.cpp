@@ -6,7 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "MotionWarpingComponent.h"
-#include "MonStateComponent.h"
+#include "MyMonStateComponent.h"
 #include "ST_MyMonsterSkill.h"
 #include "Animation/AnimMontage.h"
 #include "MySurface.h"
@@ -52,7 +52,7 @@ AWyvernCharacter::AWyvernCharacter()
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
 
-	MonStateComponent = CreateDefaultSubobject<UMonStateComponent>(TEXT("MonStateComponent"));
+	MonStateComponent = CreateDefaultSubobject<UMyMonStateComponent>(TEXT("MonStateComponent"));
 
 	bUseControllerRotationYaw = false;
 
@@ -66,10 +66,14 @@ void AWyvernCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MonStateComponent->SetMonState(Phase);
+	if (MonStateComponent)
+	{
+		MonStateComponent->SetMonState(Phase);
 
-	MonStateComponent->EventDispatcher_Death.AddDynamic(this,
-		&AWyvernCharacter::DoDeath);
+		MonStateComponent->EventDispatcher_Death.AddDynamic(this,
+			&AWyvernCharacter::DoDeath);
+	}
+	
 
 	OnTakePointDamage.AddDynamic(this,
 		&AWyvernCharacter::EventProcessTakePointDamage);
@@ -504,7 +508,7 @@ void AWyvernCharacter::S2A_DoDeath_Implementation()
 		(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
 	if (PlayerChar)
 	{
-		//PlayerChar->ChangeCameraToAnotherView(); 아직 미구현 한준님 담당!
+		PlayerChar->ChangeCameraToAnotherView(this, 5.0f);
 	}
 }
 
@@ -607,6 +611,7 @@ void AWyvernCharacter::OnRep_Phase()
 	case EPhase::ThirdPhase:
 		break;
 	}
+
 }
 
 void AWyvernCharacter::OnRep_MonAIState()

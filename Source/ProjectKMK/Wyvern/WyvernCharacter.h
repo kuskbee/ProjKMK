@@ -7,13 +7,13 @@
 #include "MonsterInterface.h"
 #include "../Interfaces/CombatReactInterface.h"
 #include "ST_MyMonsterSkill.h"
-#include "Define.h"
+#include "MyDefine.h"
 #include "WyvernCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UMotionWarpingComponent;
-class UMonStateComponent;
+class UMyMonStateComponent;
 class UAnimMontage;
 class UBehaviorTree;
 class UNiagaraSystem;
@@ -62,7 +62,7 @@ public:
 	TObjectPtr<UMotionWarpingComponent> MotionWarping;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
-	TObjectPtr<UMonStateComponent> MonStateComponent;
+	TObjectPtr<UMyMonStateComponent> MonStateComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Data", BlueprintReadWrite)
 	TObjectPtr<UDataTable> FirstPhaseTable;
