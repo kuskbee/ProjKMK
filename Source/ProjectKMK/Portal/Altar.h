@@ -49,7 +49,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="VFX")
 	TObjectPtr<UParticleSystem> OpenEffectTemplate;
 
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Altar")
 	TObjectPtr<APortal> LevelMovePortal;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

@@ -514,7 +514,7 @@ void AWyvernCharacter::DoDeath()
 		(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
 	if (PlayerChar)
 	{
-		//PlayerChar->ChangeCameraToAnotherView(); 아직 미구현 한준님 담당!
+		PlayerChar->ChangeCameraToAnotherView(this, 5.0f);
 	}
 }
 
