@@ -73,6 +73,11 @@ void AWyvernCharacter::BeginPlay()
 
 	OnTakePointDamage.AddDynamic(this,
 		&AWyvernCharacter::EventProcessTakePointDamage);
+
+	if (Phase == EPhase::ThirdPhase)
+	{
+		CutTail(false);
+	}
 }
 
 // Called every frame
@@ -89,9 +94,9 @@ void AWyvernCharacter::Tick(float DeltaTime)
 		{
 			if (IsValid(TailSurface))
 			{
-				TailSurface->K2_DestroyActor();
+				TailSurface->Destroy();
 			}
-			K2_DestroyActor();
+			Destroy();
 		}
 
 	}
@@ -409,54 +414,61 @@ bool AWyvernCharacter::IsWeakAttack(FName BoneName)
 
 void AWyvernCharacter::CutTail(bool IsNotCut)
 {
-	if (!GetMesh()->DoesSocketExist("blindspot"))
+	if (HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No Socket exist : blindspot"));
-		return;
-	}
-	FTransform Transform = GetMesh()->GetSocketTransform("blindspot");
-
-	if (TailSurface)
-	{
-		AMySurface* Surface = Cast<AMySurface>(GetWorld()->SpawnActor(TailSurface->StaticClass()));
-		Surface->AttachToComponent(
-			GetMesh(),
-			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
-			"blindspot"
-		);
-		if (IsNotCut)
+		if (!GetMesh()->DoesSocketExist("blindspot"))
 		{
-			FVector TailSpawnPoint = GetMesh()->GetSocketLocation("blindspot");
-			FHitResult OutHit;
-			TArray<AActor*> ActorsToIgnore;
-			ActorsToIgnore.Add(this);
+			UE_LOG(LogTemp, Warning, TEXT("No Socket exist : blindspot"));
+			return;
+		}
+		FTransform Transform = GetMesh()->GetSocketTransform("blindspot");
 
-			if (UKismetSystemLibrary::LineTraceSingle(
-				GetWorld(),
-				TailSpawnPoint + FVector(0, 0, 30.0f),
-				TailSpawnPoint + FVector(0, 0, -30.0f),
-				UEngineTypes::ConvertToTraceType(ECC_Visibility),
-				false,
-				ActorsToIgnore,
-				EDrawDebugTrace::None,
-				OutHit,
-				true
-			)) {
-				TailSpawnPoint = OutHit.ImpactPoint + FVector(0, 0, 100.0f);
-			}
-
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.SpawnCollisionHandlingOverride =
-				ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-			FTransform SpawnTransform(FRotator(0.f, 0.f, 0.f), TailSpawnPoint, FVector(1.0f, 1.0f, 1.0f));
-			GetWorld()->SpawnActor<AActor>(
-				TailSurface->StaticClass(),
-				SpawnTransform,
-				SpawnParams
+		if (TailSurfaceClass)
+		{
+			TailSurface = Cast<AMySurface>(GetWorld()->SpawnActor(TailSurface->StaticClass()));
+			TailSurface->AttachToComponent(
+				GetMesh(),
+				FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
+				"blindspot"
 			);
+			if (IsNotCut)
+			{
+				FVector TailSpawnPoint = GetMesh()->GetSocketLocation("blindspot");
+				FHitResult OutHit;
+				TArray<AActor*> ActorsToIgnore;
+				ActorsToIgnore.Add(this);
 
+				if (UKismetSystemLibrary::LineTraceSingle(
+					GetWorld(),
+					TailSpawnPoint + FVector(0, 0, 30.0f),
+					TailSpawnPoint + FVector(0, 0, -30.0f),
+					UEngineTypes::ConvertToTraceType(ECC_Visibility),
+					false,
+					ActorsToIgnore,
+					EDrawDebugTrace::None,
+					OutHit,
+					true
+				)) {
+					TailSpawnPoint = OutHit.ImpactPoint + FVector(0, 0, 100.0f);
+				}
+
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride =
+					ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+				FTransform SpawnTransform(FRotator(0.f, 0.f, 0.f), TailSpawnPoint, FVector(1.0f, 1.0f, 1.0f));
+				if (Tail)
+				{
+					GetWorld()->SpawnActor<AActor>(
+						Tail,
+						SpawnTransform,
+						SpawnParams
+					);
+				}
+			}
 		}
 	}
+	FName TailBoneName = GetMesh()->GetSocketBoneName("BN_Wynern_Tail_5");
+	GetMesh()->HideBoneByName(TailBoneName, EPhysBodyOp::PBO_None);
 }
 
 void AWyvernCharacter::DoDeath()
@@ -499,16 +511,17 @@ void AWyvernCharacter::S2A_DoDeath_Implementation()
 					InGameGameState->SetCurrentGameState(EGameState::EGS_Win);
 				}
 			}
+			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>
+				(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
+			if (PlayerChar)
+			{
+				PlayerChar->ChangeCameraToAnotherView(this, 5.0f);
+			}
 		}
 		break;
 	}
 
-	APlayerCharacter* PlayerChar = Cast<APlayerCharacter>
-		(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
-	if (PlayerChar)
-	{
-		PlayerChar->ChangeCameraToAnotherView(this, 5.0f);
-	}
+	
 }
 
 void AWyvernCharacter::DeadCollision()
