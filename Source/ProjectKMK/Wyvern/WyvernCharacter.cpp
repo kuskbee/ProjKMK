@@ -510,7 +510,12 @@ void AWyvernCharacter::S2A_DoDeath_Implementation()
 
 void AWyvernCharacter::DeadCollision()
 {
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCharacterMovement()->DisableMovement();
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block); // 지면만 막기
+
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 

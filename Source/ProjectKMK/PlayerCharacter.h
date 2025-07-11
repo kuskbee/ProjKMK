@@ -88,6 +88,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EchoState();
+
+	void ResponsePlayerDead();
+
 	UFUNCTION()
 	void OnRep_IsHold();
 	UFUNCTION()

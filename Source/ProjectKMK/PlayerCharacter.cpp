@@ -55,7 +55,7 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
-	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel2);
+	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
 
 	// WeaponTrace
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
@@ -228,6 +228,9 @@ void APlayerCharacter::BindEventStatusComponent()
 void APlayerCharacter::DoDeath(bool bIsDeadStatus)
 {
 	if (GetLocalRole() != ROLE_Authority) return;
+
+	// 중복처리 방지
+	if (EchoState == EPlayerState::EPS_Dead) return;
 	
 	EchoState = EPlayerState::EPS_Dead;
 
@@ -446,9 +449,10 @@ void APlayerCharacter::OnRep_EchoState()
 	switch (EchoState)
 	{
 	case EPlayerState::EPS_Dead:
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	{
+		ResponsePlayerDead();
 		break;
+	}
 	case EPlayerState::EPS_Attack:
 		break;
 	case EPlayerState::EPS_Dodge:
@@ -458,6 +462,18 @@ void APlayerCharacter::OnRep_EchoState()
 	case EPlayerState::EPS_HitReact:
 		break;
 	}
+}
+
+void APlayerCharacter::ResponsePlayerDead()
+{
+	GetCharacterMovement()->DisableMovement();
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block); // 지면만 막기
+	
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 }
 
 void APlayerCharacter::OnRep_IsHold()
