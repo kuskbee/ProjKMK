@@ -10,7 +10,7 @@
 
 #include "MonStateComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEventDispatcher_MonState, FMyCurMonState, Monster);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FEventDispatcher_UpdateHP, float, MaxHP, float, WeaknessHP, float, CurHP, float, CurWeakHP);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEventDispatcher_Death);
 
@@ -33,9 +33,6 @@ public:
 
 	UPROPERTY(ReplicatedUsing=OnRep_CurMonState, EditAnywhere, Category = "Data", BlueprintReadWrite)
 	struct FMyCurMonState CurMonState;
-
-	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
-	FEventDispatcher_MonState EventDispatcher_MonState;
 
 	UPROPERTY(BlueprintAssignable, Category = "EventDispatcher", BlueprintCallable)
 	FEventDispatcher_UpdateHP EventDispatcher_UpdateHP;

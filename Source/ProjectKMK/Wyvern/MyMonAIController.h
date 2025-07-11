@@ -50,4 +50,10 @@ public:
 
 	UFUNCTION()
 	void CheckTargetActors();
+
+	UFUNCTION()
+	void WhenPawnTakeDamage(float KnockBackAnimPlayLength);
+
+	UFUNCTION()
+	void RestartBehaviorTree();
 };

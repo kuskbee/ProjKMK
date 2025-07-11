@@ -34,7 +34,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	// WyvernInterface Implement
-	virtual void Attack() override;
+	virtual float Attack() override;
 	virtual bool AddTargetActor(AActor* InTarget) override;
 	virtual bool RemoveTargetActor(AActor* InTarget) override;
 	virtual AActor* ChangeTargetActor() override;
