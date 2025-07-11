@@ -353,7 +353,7 @@ void APlayerCharacter::Server_PerformAttack_Implementation(bool bIsDash)
 		EquippedWeapon->SetWeaponCollisionEnable(true);
 	}
 
-	Multicast_PlayAttackMontage(bIsDash);
+	Multicast_PlayAttackMontage(bIsDash, AttackIndex);
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance)
@@ -492,21 +492,12 @@ void APlayerCharacter::OnRep_AttackIndex()
 {
 }
 
-void APlayerCharacter::Multicast_PlayAttackMontage_Implementation(bool bIsDash)
+void APlayerCharacter::Multicast_PlayAttackMontage_Implementation(bool bIsDash, int32 MontageIndex)
 {
 	UnbindEventAttackMontageEnd();
 
-	UAnimMontage* AttackMontageToPlay;
-	if (bIsDash)
-	{
-		AttackMontageToPlay = DashAttackMontage;
-	}
-	else
-	{
-		AttackMontageToPlay = NormalAttackMontage;
-	}
-
-	FName Section = FName(*FString::Printf(TEXT("Attack%d"), AttackIndex));
+	UAnimMontage* AttackMontageToPlay = bIsDash ? DashAttackMontage : NormalAttackMontage;
+	FName Section = FName(*FString::Printf(TEXT("Attack%d"), MontageIndex));
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && AttackMontageToPlay)

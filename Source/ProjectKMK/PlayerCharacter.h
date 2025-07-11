@@ -97,8 +97,8 @@ protected:
 	void OnRep_AttackIndex();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_PlayAttackMontage(bool bIsDash);
-	void Multicast_PlayAttackMontage_Implementation(bool bIsDash);
+	void Multicast_PlayAttackMontage(bool bIsDash, int32 MontageIndex);
+	void Multicast_PlayAttackMontage_Implementation(bool bIsDash, int32 MontageIndex);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlayHitReactMontage(const FString& SectionName);

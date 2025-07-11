@@ -160,6 +160,9 @@ bool AWeaponBase::HasSameMonsterTag(AActor* TargetActor)
 
 void AWeaponBase::OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	//서버에서만 처리
+	if (!HasAuthority()) return;
+
 	// 몬스터끼리 데미지받는 상황 막음
 	if (HasSameMonsterTag(OtherActor))
 	{
