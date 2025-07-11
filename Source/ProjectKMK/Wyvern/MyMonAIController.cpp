@@ -10,8 +10,10 @@
 #include "WyvernCharacter.h"
 #include "MonsterInterface.h"
 #include "../PlayerCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "../UI/MyHUD.h"
+#include "TimerManager.h"
 
 AMyMonAIController::AMyMonAIController()
 {
@@ -45,6 +47,7 @@ void AMyMonAIController::BeginPlay()
 
 	GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this,
 		&AMyMonAIController::ProcessPerceptionUpdated);
+
 }
 
 void AMyMonAIController::OnPossess(APawn* InPawn)
@@ -142,4 +145,38 @@ void AMyMonAIController::CheckTargetActors()
 	{
 		Monster->CheckTargetActors();
 	}
+}
+
+void AMyMonAIController::RestartBehaviorTree()
+{
+	ACharacter* MonChar = Cast<ACharacter>(GetPawn());
+	if (MonChar)
+	{
+		MonChar->GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+	}
+
+	UBehaviorTreeComponent* OwnedComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+	if (OwnedComp)
+	{
+		OwnedComp->ResumeLogic("Resumed after pause");
+	}
+}
+
+void AMyMonAIController::WhenPawnTakeDamage(float KnockBackAnimPlayLength)
+{
+	StopMovement();
+
+	UBehaviorTreeComponent* OwnedComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+	if (OwnedComp)
+	{
+		OwnedComp->PauseLogic("Paused by AIController");
+	}
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle,
+		this,
+		&AMyMonAIController::RestartBehaviorTree,
+		KnockBackAnimPlayLength,
+		false
+	);
 }

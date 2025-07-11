@@ -21,7 +21,7 @@ class PROJECTKMK_API IMonsterInterface
 {
 	GENERATED_BODY()
 public:
-	virtual void Attack() = 0;
+	virtual float Attack() = 0;
 	virtual bool AddTargetActor(AActor* InTarget) = 0;
 	virtual bool RemoveTargetActor(AActor* InTarget) = 0;
 	virtual AActor* ChangeTargetActor() = 0;

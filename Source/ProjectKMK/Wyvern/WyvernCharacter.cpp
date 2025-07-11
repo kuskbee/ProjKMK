@@ -114,12 +114,13 @@ void AWyvernCharacter::PossessedBy(AController* NewController)
 
 }
 
-void AWyvernCharacter::Attack()
+float AWyvernCharacter::Attack()
 {
 	TArray<FName> Names;
-	int RandomIndex;
 	FST_MyMonsterSkill* Skill;
-	UAnimMontage* AttackMontage;
+	UAnimMontage* AttackMontage = nullptr;
+	int RandomIndex = 0;
+	float PlayerRate = 0.0f;
 
 	switch (Phase)
 	{
@@ -130,12 +131,8 @@ void AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
-			if (AttackMontage)
-			{
-				S2A_OnAttack(AttackMontage, 1.2f);
-			}
+			PlayerRate = 1.2f;
 		}
-
 		break;
 
 	case EPhase::SecondPhase:
@@ -145,12 +142,8 @@ void AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
-			if (AttackMontage)
-			{
-				S2A_OnAttack(AttackMontage, 1.2f);
-			}
+			PlayerRate = 1.2f;
 		}
-
 		break;
 	case EPhase::ThirdPhase:
 		if (ThirdPhaseTable)
@@ -159,12 +152,28 @@ void AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
-			if (AttackMontage)
-			{
-				S2A_OnAttack(AttackMontage, 1.4f);
-			}
+			PlayerRate = 1.4f;
 		}
 		break;
+	}
+
+	if (AttackMontage)
+	{
+		S2A_OnAttack(AttackMontage, 1.4f);
+		return AttackMontage->GetPlayLength();
+	}
+	
+	return 0.0f;
+}
+
+void AWyvernCharacter::S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate)
+{
+	if (!GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
+	{
+		if (InAttackMontage)
+		{
+			PlayAnimMontage(InAttackMontage, InPlayerRate);
+		}
 	}
 }
 
@@ -228,17 +237,6 @@ void AWyvernCharacter::CheckTargetActors()
 				RemoveTargetActor(Player);
 				return CheckTargetActors();
 			}
-		}
-	}
-}
-
-void AWyvernCharacter::S2A_OnAttack_Implementation(UAnimMontage* InAttackMontage, float InPlayerRate)
-{
-	if (!GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
-	{
-		if (InAttackMontage)
-		{
-			PlayAnimMontage(InAttackMontage, InPlayerRate);
 		}
 	}
 }
@@ -333,6 +331,17 @@ bool AWyvernCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor
 
 void AWyvernCharacter::S2A_ApplyHit_Implementation(const FHitResult& HitResult, AActor* HitterActor, float WarpingPercent, float RandomKnockbackPower)
 {
+	AMyMonAIController* MyController = Cast<AMyMonAIController>(GetController());
+	if (MyController)
+	{
+		MyController->WhenPawnTakeDamage(KnockBackMontage->GetPlayLength());
+	}
+	
+	if (KnockBackMontage)
+	{
+		PlayAnimMontage(KnockBackMontage);
+	}
+
 	if (WarpingPercent <= 0.7f)
 	{
 		MotionWarping->AddOrUpdateWarpTargetFromLocation(
@@ -343,18 +352,6 @@ void AWyvernCharacter::S2A_ApplyHit_Implementation(const FHitResult& HitResult, 
 	else
 	{
 		MotionWarping->RemoveAllWarpTargets();
-	}
-
-	if (KnockBackMontage)
-	{
-		UAnimInstance* Anim = GetMesh()->GetAnimInstance();
-
-		if (Anim && Anim->IsAnyMontagePlaying())
-		{
-			Anim->Montage_Stop(0.0f);
-		}
-
-		PlayAnimMontage(KnockBackMontage);
 	}
 
 	UGameplayStatics::PlayWorldCameraShake(

@@ -3,6 +3,7 @@
 
 #include "BTTask_MyWyvernAttack.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 #include "MonsterInterface.h"
 
@@ -14,7 +15,9 @@ EBTNodeResult::Type UBTTask_MyWyvernAttack::ExecuteTask(UBehaviorTreeComponent& 
 
     if (WyvernChar)
     {
-        WyvernChar->Attack();
+        float AttackActionTime = WyvernChar->Attack();
+
+        OwnerComp.GetBlackboardComponent()->SetValueAsFloat(GetSelectedBlackboardKey(), AttackActionTime);
 
         return EBTNodeResult::Succeeded;
     }
