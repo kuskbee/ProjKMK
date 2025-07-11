@@ -135,7 +135,7 @@ void APortal::MoveNextLevel(APawn* Target)
 			if (HasAuthority())
 			{
 				//UGameplayStatics::OpenLevel(GetWorld(), FName(NextLevelName),true, TEXT("listen"));
-				FString TravelURL = FString::Printf(TEXT("/Game/ThirdPerson/Maps/%s"), *NextLevelName);
+				FString TravelURL = FString::Printf(TEXT("/Game/Level/Maps/%s"), *NextLevelName);
 				if (GetNetMode() == NM_ListenServer)
 				{
 					TravelURL += TEXT("?listen");
