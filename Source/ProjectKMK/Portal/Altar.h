@@ -28,7 +28,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void ShowOpenEffect();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ShowOpenEffect();
+	void Multicast_ShowOpenEffect_Implementation();
 
 	UFUNCTION()
 	void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -51,6 +53,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Altar")
 	TObjectPtr<APortal> LevelMovePortal;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> TailClass;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsOverlappedTail;

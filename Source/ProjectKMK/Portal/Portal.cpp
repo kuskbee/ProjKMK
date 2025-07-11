@@ -8,6 +8,7 @@
 #include "Camera/CameraActor.h"
 #include "Kismet/GameplayStatics.h"
 #include "../PlayerCharacter.h"
+#include "Net/UnrealNetwork.h"
 #include "Altar.h"
 
 // Sets default values
@@ -23,12 +24,14 @@ APortal::APortal()
 	Box->SetGenerateOverlapEvents(true);
 	Box->SetRelativeScale3D(FVector(2.f));
 	Box->SetRelativeLocation(FVector(20.f, 0.f, 0.f));
-	Box->SetBoxExtent(FVector(15.f, 42.f, 65.f));
+	Box->SetBoxExtent(FVector(15.f, 42.f, 153.f));
 
 	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Box->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	Box->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Ignore);
 	Box->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel2, ECollisionResponse::ECR_Block);
+
+	SetReplicates(true);
 }
 
 // Called when the game starts or when spawned
@@ -41,8 +44,20 @@ void APortal::BeginPlay()
 	HidePortal();
 }
 
+void APortal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(APortal, PortalState);
+}
+
 void APortal::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	APawn* OverlappedPawn = Cast<APawn>(OtherActor);
 	if (IsValid(OverlappedPawn))
 	{
@@ -60,32 +75,34 @@ void APortal::OnOpeningEffectFinished(UParticleSystemComponent* PSystem)
 
 void APortal::HidePortal()
 {
+	// :MULTI:
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	PortalState = EPortalState::EPS_Hidden;
 	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	PlayPortalVFX(EPortalState::EPS_Opening, false); // 끔
-	PlayPortalVFX(EPortalState::EPS_Open, false);
-	PlayPortalVFX(EPortalState::EPS_Closing, false);
+	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, false); // 끔
+	Multicast_PlayPortalVFX(EPortalState::EPS_Open, false);
+	Multicast_PlayPortalVFX(EPortalState::EPS_Closing, false);
 }
 
 void APortal::EnterOpening(AAltar* _Altar)
 {
+	// :MULTI:
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	Altar = _Altar;
 	PortalState = EPortalState::EPS_Opening;
 
-	PlayPortalVFX(EPortalState::EPS_Opening, true);
+	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, true);
 
-	// :MULTI:  멀티로 가면 바뀌어야함!
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	
-	if (IsValid(PC))
-	{
-		APlayerCharacter* Player = Cast<APlayerCharacter>(PC->GetPawn());
-		if (IsValid(Player) && IsValid(PortalCamera))
-		{
-			Player->ChangeCameraToAnotherView(PortalCamera, 3.0f);
-		}
-	}
+	Multicast_ChangePortalView();
 }
 
 bool APortal::IsHidden()
@@ -96,46 +113,60 @@ bool APortal::IsHidden()
 void APortal::EnterOpen()
 {
 	PortalState = EPortalState::EPS_Open;
-	PlayPortalVFX(EPortalState::EPS_Opening, false);
-	PlayPortalVFX(EPortalState::EPS_Open, true);
 	Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	
+
+	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, false);
+	Multicast_PlayPortalVFX(EPortalState::EPS_Open, true);
+		
 	if (IsValid(Altar))
 	{
-		Altar->ShowOpenEffect();
+		Altar->Multicast_ShowOpenEffect();
 	}
 }
 
 void APortal::MoveNextLevel(APawn* Target)
 {
-	// :MULTI: 멀티면 고쳐야한다.
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-
-	if (IsValid(PC) && IsValid(PC->GetPawn()))
+	if (Cast<APlayerCharacter>(Target))
 	{
-		// Overlapped Pawn이 플레이어인지 체크
-		if (PC->GetPawn() == Target)
+		// Target이 플레이어인지 체크
+		if (!NextLevelName.IsEmpty())
 		{
-			if (!NextLevelName.IsEmpty())
+			// 누가 하나라도 오버랩되면 전체 맵 이동
+			if (HasAuthority())
 			{
-				UGameplayStatics::OpenLevel(GetWorld(), FName(NextLevelName));
+				//UGameplayStatics::OpenLevel(GetWorld(), FName(NextLevelName),true, TEXT("listen"));
+				FString TravelURL = FString::Printf(TEXT("/Game/ThirdPerson/Maps/%s"), *NextLevelName);
+				if (GetNetMode() == NM_ListenServer)
+				{
+					TravelURL += TEXT("?listen");
+				}
+				const bool bAbsolute = false;
+				const bool bSeamless = false;  // 필요하면 GameMode에서 bUseSeamlessTravel = true;
+
+				GetWorld()->ServerTravel(TravelURL, bAbsolute, bSeamless);
 			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("[Warning] Map Name is Empty!!!"));
-			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Warning] Map Name is Empty!!!"));
 		}
 	}
 }
 
 void APortal::EnterClosing()
 {
+	// :MULTI:
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	HidePortal();
 	PortalState = EPortalState::EPS_Closing;
-	PlayPortalVFX(EPortalState::EPS_Closing, true);
+	Multicast_PlayPortalVFX(EPortalState::EPS_Closing, true);
 }
 
-void APortal::PlayPortalVFX(EPortalState Type, bool bSpawn)
+void APortal::Multicast_PlayPortalVFX_Implementation(EPortalState Type, bool bSpawn)
 {
 	// 이전에 재생중이던 파티클이 있으면 끄고 파괴
 	if (IsValid(CurrentPSC))
@@ -179,5 +210,44 @@ void APortal::PlayPortalVFX(EPortalState Type, bool bSpawn)
 	{
 		CurrentPSC->OnSystemFinished.AddDynamic(
 			this, &APortal::OnOpeningEffectFinished);
+	}
+}
+
+void APortal::Multicast_ChangePortalView_Implementation()
+{
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (IsValid(PC))
+	{
+		APlayerCharacter* Player = Cast<APlayerCharacter>(PC->GetPawn());
+		if (IsValid(Player) && IsValid(PortalCamera))
+		{
+			Player->ChangeCameraToAnotherView(PortalCamera, 3.0f);
+		}
+	}
+}
+
+void APortal::OnRep_PortalState()
+{
+	switch (PortalState)
+	{
+	case EPortalState::EPS_Hidden:
+	{
+		Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+	}
+	case EPortalState::EPS_Opening:
+	{
+		break;
+	}
+	case EPortalState::EPS_Open:
+	{
+		Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		break;
+	}
+	case EPortalState::EPS_Closing:
+	{
+		break;
+	}
 	}
 }
