@@ -89,23 +89,34 @@ void AMyBreath::BreathDamage()
 		500.0f
 	);
 
-	for (struct FHitResult OutHit : OutHits)
-	{
-		if (OutHit.GetActor())
-		{
-			UGameplayStatics::ApplyDamage(
-				OutHit.GetActor(),
-				Damage,
-				OutHit.GetActor()->GetInstigatorController(),
-				this,
-				NULL
-			);
+	TMap<AActor*, FHitResult> HitResults;
 
-			ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
-			if (Object)
-			{
-				Object->ApplyHit(OutHit, this);
-			}
+	for (const FHitResult& Hit : OutHits)
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor && !HitResults.Contains(HitActor))
+		{
+			HitResults.Add(HitActor, Hit);
+		}
+	}
+
+	for (auto& HitResult : HitResults)
+	{
+		AActor* Actor = HitResult.Key;
+		const FHitResult& Hit = HitResult.Value;
+
+		UGameplayStatics::ApplyDamage(
+			Actor,
+			Damage,
+			Actor->GetInstigatorController(),
+			this,
+			NULL
+		);
+
+		ICombatReactInterface* Object = Cast<ICombatReactInterface>(Actor);
+		if (Object)
+		{
+			Object->ApplyHit(Hit, this);
 		}
 	}
 }

@@ -36,7 +36,7 @@ public:
 	TObjectPtr<USphereComponent> Start;
 
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
-	float Damage;
+	float Damage = 100.0f;
 
 	UFUNCTION(BlueprintCallable)
 	void BreathDamage();

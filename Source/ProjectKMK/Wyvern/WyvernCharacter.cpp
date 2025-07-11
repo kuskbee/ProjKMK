@@ -276,23 +276,29 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 		OutHits,
 		true
 	);
-	for (FHitResult OutHit : OutHits)
-	{
-		if (OutHit.GetActor())
-		{
-			UGameplayStatics::ApplyDamage(
-				OutHit.GetActor(),
-				Damage,
-				GetController(),
-				this,
-				NULL
-			);
 
-			ICombatReactInterface* Object = Cast<ICombatReactInterface>(OutHit.GetActor());
-			if (Object)
-			{
-				Object->ApplyHit(OutHit, this);
-			}
+	TMap<AActor*, FHitResult> HitResults;
+
+	for (const FHitResult& Hit : OutHits)
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor && !HitResults.Contains(HitActor))
+		{
+			HitResults.Add(HitActor, Hit);
+		}
+	}
+
+	for (auto& HitResult : HitResults)
+	{
+		AActor* Actor = HitResult.Key;
+		const FHitResult& Hit = HitResult.Value;
+
+		UGameplayStatics::ApplyDamage(Actor, Damage, GetController(), this, nullptr);
+
+		ICombatReactInterface* Object = Cast<ICombatReactInterface>(Actor);
+		if (Object)
+		{
+			Object->ApplyHit(Hit, this);
 		}
 	}
 }
@@ -523,24 +529,38 @@ void AWyvernCharacter::EventUpdateMonPhase(EPhase In_Phase)
 
 void AWyvernCharacter::ShowMonsterHealthBar_Implementation(APlayerCharacter* InPlayer)
 {
-	if (InPlayer->IsLocallyControlled())
-	{
-		APlayerController* OwnerPC = Cast<APlayerController>(InPlayer->GetController());
-		//OwnerPC->CallEnCounter(this);
+	APlayerController* OwnerPC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
-		if (OwnerPC && OwnerPC == UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	if (OwnerPC)
+	{
+		AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
+		if (LocalHud)
 		{
-			AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
-			if (LocalHud)
+			if (!LocalHud->IsShowHealthBar)
 			{
-				if (!LocalHud->IsShowHealthBar)
-				{
-					LocalHud->ShowMonsterHealthBar();
-					LocalHud->BindWyvernEvent(this);
-				}
+				LocalHud->ShowMonsterHealthBar();
+				LocalHud->BindWyvernEvent(this);
 			}
 		}
 	}
+	// 단독으로 몬스터 체력 UI 노출
+	//if (InPlayer->IsLocallyControlled())
+	//{
+	//	APlayerController* OwnerPC = Cast<APlayerController>(InPlayer->GetController());
+	//	//OwnerPC->CallEnCounter(this);
+	//	if (OwnerPC && OwnerPC == UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	//	{
+	//		AMyHUD* LocalHud = Cast<AMyHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD());
+	//		if (LocalHud)
+	//		{
+	//			if (!LocalHud->IsShowHealthBar)
+	//			{
+	//				LocalHud->ShowMonsterHealthBar();
+	//				LocalHud->BindWyvernEvent(this);
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 void AWyvernCharacter::HideMonsterHealthBar_Implementation(APlayerCharacter* InPlayer)

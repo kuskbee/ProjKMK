@@ -18,9 +18,13 @@ void UBTService_UpdateAttackTarget::TickNode(UBehaviorTreeComponent& OwnerComp, 
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
 	AMyMonAIController* MonAIController = Cast<AMyMonAIController>(OwnerComp.GetAIOwner());
-	if (MonAIController)
+	ACharacter* WyvernChar = Cast<ACharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	if (MonAIController && WyvernChar)
 	{
-		MonAIController->CheckTargetActors();
-		MonAIController->ChangeTargetActor();
+		if (!WyvernChar->GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
+		{
+			MonAIController->CheckTargetActors();
+			MonAIController->ChangeTargetActor();
+		}
 	}
 }
