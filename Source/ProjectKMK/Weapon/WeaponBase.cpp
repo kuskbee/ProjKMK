@@ -138,8 +138,7 @@ bool AWeaponBase::DoBoxTrace(AActor* TargetActor, FHitResult& OutHit)
 		true
 	);
 
-	IgnoreActors.AddUnique(TargetActor);
-
+	UE_LOG(LogTemp, Error, TEXT("[DoBoxTrace] Target:%s, bHit : %d"), *TargetActor->GetName(), bHit);
 
 	return bHit;
 }
@@ -163,6 +162,7 @@ void AWeaponBase::OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent, A
 	//서버에서만 처리
 	if (!HasAuthority()) return;
 
+	UE_LOG(LogTemp, Warning, TEXT("[Weapon][Server] Overlap hit on: %s"), *OtherActor->GetName());
 	// 몬스터끼리 데미지받는 상황 막음
 	if (HasSameMonsterTag(OtherActor))
 	{
@@ -174,6 +174,13 @@ void AWeaponBase::OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent, A
 	if (bHit)
 	{
 		TObjectPtr<AActor> DamagedActor = HitResult.GetActor();
+
+		if (DamagedActor != OtherActor)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Weapon][Server] After DoBoxTrace %s / %s"), *OtherActor->GetName(), *DamagedActor->GetName() );
+			return;
+		}
+
 		// 몬스터끼리 데미지받는 상황 막음
 		if (HasSameMonsterTag(DamagedActor)) 
 		{
@@ -182,6 +189,8 @@ void AWeaponBase::OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 		if (IsValid(OwnerCharacter))
 		{
+			IgnoreActors.AddUnique(DamagedActor);
+
 			UGameplayStatics::ApplyPointDamage(DamagedActor, AttackPower, HitResult.ImpactPoint, HitResult,
 				OwnerCharacter->GetController(), this, UDamageType::StaticClass());
 
