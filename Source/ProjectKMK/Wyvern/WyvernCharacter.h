@@ -149,6 +149,12 @@ public:
 	TObjectPtr<UAnimMontage> DeadMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
+	TSubclassOf<AActor> Tail;
+
+	UPROPERTY(EditAnywhere, Category = "Components", BlueprintReadWrite)
+	TSubclassOf<AMySurface> TailSurfaceClass;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
 	TObjectPtr<AMySurface> TailSurface;
 
 	UPROPERTY(EditAnywhere, Category = "Effects", BlueprintReadWrite)
