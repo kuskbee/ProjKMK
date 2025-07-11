@@ -33,6 +33,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UFUNCTION()
 	void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -47,7 +49,16 @@ public:
 	void MoveNextLevel(APawn* Target);
 	void EnterClosing();
 
-	void PlayPortalVFX(EPortalState Type, bool bSpawn);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayPortalVFX(EPortalState Type, bool bSpawn);
+	void Multicast_PlayPortalVFX_Implementation(EPortalState Type, bool bSpawn);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ChangePortalView();
+	void Multicast_ChangePortalView_Implementation();
+
+	UFUNCTION()
+	void OnRep_PortalState();
 
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)
@@ -68,7 +79,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Portal")
 	FString NextLevelName;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Portal")
+	UPROPERTY(ReplicatedUsing = OnRep_PortalState, VisibleAnywhere, BlueprintReadOnly, Category = "Portal")
 	EPortalState PortalState;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")

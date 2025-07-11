@@ -14,6 +14,7 @@ AAltar::AAltar()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	AltarMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AltarMesh"));
 	AltarMesh->SetupAttachment(GetRootComponent());
@@ -37,7 +38,7 @@ void AAltar::BeginPlay()
 	Box->OnComponentEndOverlap.AddDynamic(this, &AAltar::OnBoxEndOverlap);
 }
 
-void AAltar::ShowOpenEffect()
+void AAltar::Multicast_ShowOpenEffect_Implementation()
 {
 	if (IsValid(ParticleSystem))
 	{
@@ -97,34 +98,24 @@ void AAltar::Tick(float DeltaTime)
 
 void AAltar::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	/*ATail* Tail = Cast<ATail>(OtherActor);
-	if(IsValid(Tail))
+	if(OtherActor && TailClass)
 	{
-		IsOverlappedTail = true;
-		CurOverlappedSeconds = 0.f;
-	}*/
-
-	//  TEST
-	APlayerCharacter* Tail = Cast<APlayerCharacter>(OtherActor);
-	if (IsValid(Tail))
-	{
-		IsOverlappedTail = true;
+		if (OtherActor->IsA(TailClass))
+		{
+			IsOverlappedTail = true;
+			CurOverlappedSeconds = 0.f;
+		}
 	}
 }
 
 void AAltar::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	/*ATail* Tail = Cast<ATail>(OtherActor);
-	if(IsValid(Tail))
+	if (OtherActor && TailClass)
 	{
-		IsOverlappedTail = false;
-	}*/
-
-	// TEST
-	APlayerCharacter* Tail = Cast<APlayerCharacter>(OtherActor);
-	if (IsValid(Tail))
-	{
-		IsOverlappedTail = false;
-		CurOverlappedSeconds = 0.f;
+		if (OtherActor->IsA(TailClass))
+		{
+			IsOverlappedTail = false;
+			CurOverlappedSeconds = 0.f;
+		}
 	}
 }
