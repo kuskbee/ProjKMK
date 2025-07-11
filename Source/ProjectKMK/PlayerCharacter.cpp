@@ -189,7 +189,7 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	return 0.0f;
 }
 
-void APlayerCharacter::RespawnCharacter(FVector NewLocation, FRotator NewRotation)
+void APlayerCharacter::RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation)
 {
 	SetActorLocation(NewLocation);
 	SetActorRotation(NewRotation);
@@ -205,7 +205,10 @@ void APlayerCharacter::RespawnCharacter(FVector NewLocation, FRotator NewRotatio
 	}
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Block);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 	if (GetCharacterMovement()->MovementMode == MOVE_None)
 	{
@@ -466,6 +469,11 @@ void APlayerCharacter::OnRep_EchoState()
 
 void APlayerCharacter::ResponsePlayerDead()
 {
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+	}
+
 	GetCharacterMovement()->DisableMovement();
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
