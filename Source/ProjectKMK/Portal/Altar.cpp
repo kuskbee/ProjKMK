@@ -84,7 +84,7 @@ void AAltar::Tick(float DeltaTime)
 				bool bIsHidden = LevelMovePortal->IsHidden();
 				if (bIsHidden)
 				{
-					LevelMovePortal->EnterOpening(this);
+					LevelMovePortal->Server_EnterOpening(this);
 					UE_LOG(LogTemp, Warning, TEXT("Trigger Box! - Open Portal"));
 				}
 			}

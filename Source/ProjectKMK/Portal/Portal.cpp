@@ -58,6 +58,8 @@ void APortal::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		return;
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("[Portal] OnBoxBeginOverlap"));
+
 	APawn* OverlappedPawn = Cast<APawn>(OtherActor);
 	if (IsValid(OverlappedPawn))
 	{
@@ -69,18 +71,12 @@ void APortal::OnOpeningEffectFinished(UParticleSystemComponent* PSystem)
 {
 	if (PortalState == EPortalState::EPS_Opening)
 	{
-		EnterOpen();
+		Server_EnterOpen();
 	}
 }
 
 void APortal::HidePortal()
 {
-	// :MULTI:
-	if (!HasAuthority())
-	{
-		return;
-	}
-
 	PortalState = EPortalState::EPS_Hidden;
 	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -89,14 +85,8 @@ void APortal::HidePortal()
 	Multicast_PlayPortalVFX(EPortalState::EPS_Closing, false);
 }
 
-void APortal::EnterOpening(AAltar* _Altar)
+void APortal::Server_EnterOpening_Implementation(AAltar* _Altar)
 {
-	// :MULTI:
-	if (!HasAuthority())
-	{
-		return;
-	}
-
 	Altar = _Altar;
 	PortalState = EPortalState::EPS_Opening;
 
@@ -110,14 +100,14 @@ bool APortal::IsHidden()
 	return (PortalState == EPortalState::EPS_Hidden);
 }
 
-void APortal::EnterOpen()
+void APortal::Server_EnterOpen_Implementation()
 {
 	PortalState = EPortalState::EPS_Open;
 	Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, false);
 	Multicast_PlayPortalVFX(EPortalState::EPS_Open, true);
-		
+
 	if (IsValid(Altar))
 	{
 		Altar->Multicast_ShowOpenEffect();
@@ -143,6 +133,7 @@ void APortal::MoveNextLevel(APawn* Target)
 				const bool bAbsolute = false;
 				const bool bSeamless = false;  // 필요하면 GameMode에서 bUseSeamlessTravel = true;
 
+				UE_LOG(LogTemp, Warning, TEXT("[Portal] MoveNextLevel [%s]"), *TravelURL);
 				GetWorld()->ServerTravel(TravelURL, bAbsolute, bSeamless);
 			}
 		}
@@ -153,14 +144,8 @@ void APortal::MoveNextLevel(APawn* Target)
 	}
 }
 
-void APortal::EnterClosing()
+void APortal::Server_EnterClosing_Implementation()
 {
-	// :MULTI:
-	if (!HasAuthority())
-	{
-		return;
-	}
-
 	HidePortal();
 	PortalState = EPortalState::EPS_Closing;
 	Multicast_PlayPortalVFX(EPortalState::EPS_Closing, true);
