@@ -20,6 +20,7 @@
 #include "Interfaces/TailInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
+#include "Interfaces/CombatReactInterface.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -289,7 +290,7 @@ void APlayerCharacter::OnNormalAttack(const FInputActionValue& Value)
 {
 	if (IsCanAttack())
 	{
-		Server_PerformAttack(false);
+		Server_RequestAttack(false);
 	}
 }
 
@@ -297,7 +298,7 @@ void APlayerCharacter::OnDashAttack(const FInputActionValue& Value)
 {
 	if (IsCanAttack())
 	{
-		Server_PerformAttack(true);
+		Server_RequestAttack(true);
 	}
 }
 
@@ -327,7 +328,7 @@ void APlayerCharacter::OnHold(const FInputActionValue& Value)
 	Server_ToggleHold();
 }
 
-void APlayerCharacter::Server_PerformAttack_Implementation(bool bIsDash)
+void APlayerCharacter::Server_RequestAttack_Implementation(bool bIsDash)
 {
 	if (!IsCanAttack()) return;
 
@@ -365,9 +366,70 @@ void APlayerCharacter::Server_PerformAttack_Implementation(bool bIsDash)
 	}
 }
 
-bool APlayerCharacter::Server_PerformAttack_Validate(bool bIsDash)
+bool APlayerCharacter::Server_RequestAttack_Validate(bool bIsDash)
 {
 	return IsCanAttack();
+}
+
+void APlayerCharacter::Server_ExecuteAttack_Implementation()
+{
+	if (!IsValid(EquippedWeapon))
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ExecuteAttack] Invalid EquippedWeapon!!"));
+		return;
+	}
+
+	FVector AttackLocation;
+
+	FVector WeaponStart = EquippedWeapon->BoxTraceStart->GetComponentLocation();
+	FVector WeaponEnd = EquippedWeapon->BoxTraceStart->GetComponentLocation();
+	AttackLocation = (WeaponStart + WeaponEnd) / 2.f;
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel2));
+
+	TArray<AActor*> ActorToIgnore;
+	ActorToIgnore.Add(this);
+
+	TArray<FHitResult> OutHits;
+	UKismetSystemLibrary::SphereTraceMultiForObjects(
+		GetWorld(),
+		WeaponStart,
+		WeaponEnd,
+		50.f,
+		ObjectTypes,
+		false,
+		ActorToIgnore,
+		EDrawDebugTrace::ForDuration,
+		OutHits,
+		true
+	);
+
+	TMap<AActor*, FHitResult> HitResults;
+
+	for (const FHitResult& Hit : OutHits)
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor && !HitResults.Contains(HitActor))
+		{
+			HitResults.Add(HitActor, Hit);
+		}
+	}
+
+	for (auto& HitResult : HitResults)
+	{
+		AActor* Actor = HitResult.Key;
+		const FHitResult& Hit = HitResult.Value;
+
+		UGameplayStatics::ApplyPointDamage(Actor, AttackPower, Hit.ImpactPoint, Hit, 
+			GetController(), this, UDamageType::StaticClass());
+
+		ICombatReactInterface* Object = Cast<ICombatReactInterface>(Actor);
+		if (Object)
+		{
+			Object->ApplyHit(Hit, this);
+		}
+	}
 }
 
 void APlayerCharacter::Server_PerformDodge_Implementation()

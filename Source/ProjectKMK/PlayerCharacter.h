@@ -53,6 +53,11 @@ public:
 	void RespawnCharacter(FVector NewLocation, FRotator NewRotation);
 	void RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation);
 
+	// 히트 판정 + 피해
+	UFUNCTION(Server, Reliable)
+	void Server_ExecuteAttack();
+	void Server_ExecuteAttack_Implementation();
+
 protected:
 
 	// Bind Event
@@ -72,10 +77,11 @@ protected:
 	void OnDodge(const FInputActionValue& Value);
 	void OnHold(const FInputActionValue& Value);
 	
+	// 공격 타겟 설정/ 공격 애니메이션 설정 함수
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_PerformAttack(bool bIsDash);
-	void Server_PerformAttack_Implementation(bool bIsDash);
-	bool Server_PerformAttack_Validate(bool bIsDash);
+	void Server_RequestAttack(bool bIsDash);
+	void Server_RequestAttack_Implementation(bool bIsDash);
+	bool Server_RequestAttack_Validate(bool bIsDash);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_PerformDodge();
@@ -296,6 +302,9 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "HoldTail")
 	TObjectPtr<AActor> HoldTail;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackPower = 500.f;
 
 	//
 	FTimerHandle CameraSwitchHandle;
