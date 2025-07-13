@@ -108,7 +108,7 @@ bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor
 {
 	if (GetLocalRole() != ROLE_Authority) return false;
 
-	if (EchoState == EPlayerState::EPS_Dead) return false;
+	if (IsDead()) return false;
 	if (!IsValid(HitterActor)) return false;
 
 	FVector ImpactPoint = HitResult.ImpactPoint;
@@ -141,6 +141,17 @@ bool APlayerCharacter::ApplyHit(const FHitResult& HitResult, AActor* HitterActor
 	Multicast_SpawnHitReactEffectsAndCameraShake(ImpactPoint);
 
 	return true;
+}
+
+void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[EndPlay] %s : Reason [%d]"), *GetName(), (int)EndPlayReason);
+
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Destroy();
+		EquippedWeapon = nullptr;
+	}
 }
 
 // Called every frame
@@ -211,10 +222,11 @@ void APlayerCharacter::Multicast_RespawnCharacter_Implementation(FVector NewLoca
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	EchoState = EPlayerState::EPS_Locomotion;
 
-	/*if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
 		AnimInstance->StopAllMontages(0.2f);
-	}*/
+	}
+	Jump();
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -232,7 +244,7 @@ void APlayerCharacter::DoDeath(bool bIsDeadStatus)
 	if (GetLocalRole() != ROLE_Authority) return;
 
 	// 중복처리 방지
-	if (EchoState == EPlayerState::EPS_Dead) return;
+	if (IsDead()) return;
 	
 	EchoState = EPlayerState::EPS_Dead;
 
@@ -431,6 +443,11 @@ void APlayerCharacter::Server_ExecuteAttack_Implementation()
 			Object->ApplyHit(Hit, this);
 		}
 	}
+}
+
+bool APlayerCharacter::IsDead()
+{
+	return EchoState == EPlayerState::EPS_Dead;
 }
 
 void APlayerCharacter::Server_PerformDodge_Implementation()

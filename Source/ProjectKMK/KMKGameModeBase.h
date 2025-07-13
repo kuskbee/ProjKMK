@@ -31,7 +31,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	int32 MaxTeamDeath = 3;
 	UPROPERTY(EditDefaultsOnly)
-	float RespawnDelay = 5.0f;
+	float RespawnDelay = 8.0f;
 
 	virtual void BeginPlay() override;
 

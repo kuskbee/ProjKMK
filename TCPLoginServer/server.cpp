@@ -473,6 +473,15 @@ void Server::BroadcastStartGame()
 	Builder.Finish(SendMsgData);
 
 	BroadcastPacket(Builder, (uint8_t)LoginProtocol::Payload::S2C_StartGame);
+
+
+	// PlayerState 일괄 InGame으로 변경
+	for (auto& Player : PlayerSessionMap)
+	{
+		Player.second.CurrentState = PlayerState::InGame;
+		BroadcastPlayerChangeState(Player.second);
+	}
+
 }
 
 bool Server::RecvAll(SOCKET Sock, char* RecvBuff, size_t RecvLen)

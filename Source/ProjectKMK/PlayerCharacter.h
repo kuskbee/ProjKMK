@@ -40,6 +40,7 @@ protected:
 	// CombatReactInteface Function
 	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -57,6 +58,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_ExecuteAttack();
 	void Server_ExecuteAttack_Implementation();
+
+	bool IsDead();
 
 protected:
 
