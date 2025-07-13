@@ -9,6 +9,7 @@
 //class UButton;
 class UImage;
 class UProgressBar;
+class UTextBlock;
 
 /**
  * 
@@ -18,6 +19,7 @@ class PROJECTKMK_API UHudWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
+	virtual void NativeConstruct() override;
 
 	/*UPROPERTY(meta=(BindWidgetOptional), VisibleAnywhere, Category="UI", BlueprintReadOnly)
 	TObjectPtr<UButton> ButtonStart;*/
@@ -34,6 +36,12 @@ public:
 	UPROPERTY(meta = (BindWidgetOptional), VisibleAnywhere, Category = "UI", BlueprintReadOnly)
 	TObjectPtr<UProgressBar> PlayerHealthBar;
 
+	UPROPERTY(meta = (BindWidget), VisibleAnywhere, Category = "UI", BlueprintReadOnly)
+	TObjectPtr<UTextBlock> CountdownText;
+
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	FString CountdownString;
+
 	void DoGameWin();
 
 	void DoGameOver();
@@ -43,5 +51,7 @@ public:
 	void SetMonsterHpPercent(float CurHP, float MaxHP);
 	
 	void SetPlayerHpPercent(float CurHP, float MaxHP);
+
+	void SetRestartCountdown(int32 RestartCountdown);
 
 };

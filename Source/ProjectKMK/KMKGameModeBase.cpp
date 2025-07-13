@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "KMKGameModeBase.h"
@@ -45,6 +45,70 @@ void AKMKGameModeBase::NotifyPlayerDead(AKMKPlayerController* PlayerControllerTh
 		GetWorldTimerManager().SetTimer(RespawnTimerHandle, TimerDel, RespawnDelay, false);
 
 		RespawnTimer.Add(PlayerControllerThatDied, RespawnTimerHandle);
+	}
+}
+
+void AKMKGameModeBase::StartCountdown()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[KMKGameMode::StartCountdown]"));
+	CurrentCountdown = RestartCountdown + 1;
+
+	GetWorldTimerManager().SetTimer(RestartCountdownTimerHandle, this, &AKMKGameModeBase::RestartCountdownTick, 1.0f, true, 0.f);
+}
+
+void AKMKGameModeBase::RestartCountdownTick()
+{
+	CurrentCountdown--;
+
+	UE_LOG(LogTemp, Warning, TEXT("[KMKGameMode::RestartCountdownTick] %d"), CurrentCountdown);
+
+	if (AInGameGameState* GS = GetWorld()->GetGameState<AInGameGameState>())
+	{
+		GS->RestartCountDown = CurrentCountdown;
+	}
+
+	if (CurrentCountdown == 0)
+	{
+		StopCountdown();
+
+		OnCountdownFinished();
+	}
+}
+
+void AKMKGameModeBase::OnCountdownFinished()
+{
+	for (auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const auto PC = Cast<APlayerController>(It->Get());
+		if (IsValid(PC) && !RestartClientLevelName.IsEmpty())
+		{
+			PC->ClientTravel(RestartClientLevelName, TRAVEL_Absolute);
+		}
+	}
+
+	// 약간의 여유를 두고(클라이언트가 나가는 틈) 서버만 새 맵으로 갈 수 있게 타이머 예약
+	GetWorldTimerManager().SetTimer(
+		LevelTravelHandle,
+		[this]()
+		{
+			// 전용 서버 모드일 때만 실행
+			if (GetNetMode() == NM_DedicatedServer)
+			{
+				// 맵이름?listen 으로 실행하면 다시 리슨 모드로 기동
+				FString URL = FString::Printf(TEXT("%s?listen"), *RestartServerLevelName);
+				GetWorld()->ServerTravel(URL);
+			}
+		},
+		1.0f,
+		false
+	);
+}
+
+void AKMKGameModeBase::StopCountdown()
+{
+	if (GetWorldTimerManager().IsTimerActive(RestartCountdownTimerHandle))
+	{
+		GetWorldTimerManager().ClearTimer(RestartCountdownTimerHandle);
 	}
 }
 
