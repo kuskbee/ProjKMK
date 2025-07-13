@@ -20,6 +20,7 @@
 #include "Interfaces/TailInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
+#include "Interfaces/CombatReactInterface.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -72,6 +73,8 @@ APlayerCharacter::APlayerCharacter()
 	bReplicates = true;
 
 	SetReplicateMovement(true);
+
+	//PreviousEchoState = EchoState;
 }
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -189,8 +192,9 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	return 0.0f;
 }
 
-void APlayerCharacter::RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation)
+void APlayerCharacter::Multicast_RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[RespawnCharacter]"));
 	SetActorLocation(NewLocation);
 	SetActorRotation(NewRotation);
 
@@ -199,28 +203,23 @@ void APlayerCharacter::RespawnCharacter_Implementation(FVector NewLocation, FRot
 		StatusComponent->InitializeStatus();
 	}
 
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		AnimInstance->StopAllMontages(0.2f);
-	}
-
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	EchoState = EPlayerState::EPS_Locomotion;
 
-	if (GetCharacterMovement()->MovementMode == MOVE_None)
+	/*if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}
+		AnimInstance->StopAllMontages(0.2f);
+	}*/
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		EnableInput(PC);
 	}
-
-	EchoState = EPlayerState::EPS_Locomotion;
 }
 
 void APlayerCharacter::BindEventStatusComponent()
@@ -242,10 +241,13 @@ void APlayerCharacter::DoDeath(bool bIsDeadStatus)
 		return;
 	}
 
+	Multicast_ResponsePlayerDead();
+
 	DeathIndex = FMath::RandRange(0, DeathMontage->GetNumSections() - 1);
 	FName SectionName = DeathMontage->GetSectionName(DeathIndex);
 	
 	Multicast_PlayDeathMontage(SectionName);
+	
 }
 
 void APlayerCharacter::OnMove(const FInputActionValue& Value)
@@ -289,7 +291,7 @@ void APlayerCharacter::OnNormalAttack(const FInputActionValue& Value)
 {
 	if (IsCanAttack())
 	{
-		Server_PerformAttack(false);
+		Server_RequestAttack(false);
 	}
 }
 
@@ -297,7 +299,7 @@ void APlayerCharacter::OnDashAttack(const FInputActionValue& Value)
 {
 	if (IsCanAttack())
 	{
-		Server_PerformAttack(true);
+		Server_RequestAttack(true);
 	}
 }
 
@@ -327,7 +329,7 @@ void APlayerCharacter::OnHold(const FInputActionValue& Value)
 	Server_ToggleHold();
 }
 
-void APlayerCharacter::Server_PerformAttack_Implementation(bool bIsDash)
+void APlayerCharacter::Server_RequestAttack_Implementation(bool bIsDash)
 {
 	if (!IsCanAttack()) return;
 
@@ -365,9 +367,70 @@ void APlayerCharacter::Server_PerformAttack_Implementation(bool bIsDash)
 	}
 }
 
-bool APlayerCharacter::Server_PerformAttack_Validate(bool bIsDash)
+bool APlayerCharacter::Server_RequestAttack_Validate(bool bIsDash)
 {
 	return IsCanAttack();
+}
+
+void APlayerCharacter::Server_ExecuteAttack_Implementation()
+{
+	if (!IsValid(EquippedWeapon))
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ExecuteAttack] Invalid EquippedWeapon!!"));
+		return;
+	}
+
+	FVector AttackLocation;
+
+	FVector WeaponStart = EquippedWeapon->BoxTraceStart->GetComponentLocation();
+	FVector WeaponEnd = EquippedWeapon->BoxTraceStart->GetComponentLocation();
+	AttackLocation = (WeaponStart + WeaponEnd) / 2.f;
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel2));
+
+	TArray<AActor*> ActorToIgnore;
+	ActorToIgnore.Add(this);
+
+	TArray<FHitResult> OutHits;
+	UKismetSystemLibrary::SphereTraceMultiForObjects(
+		GetWorld(),
+		WeaponStart,
+		WeaponEnd,
+		50.f,
+		ObjectTypes,
+		false,
+		ActorToIgnore,
+		EDrawDebugTrace::ForDuration,
+		OutHits,
+		true
+	);
+
+	TMap<AActor*, FHitResult> HitResults;
+
+	for (const FHitResult& Hit : OutHits)
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor && !HitResults.Contains(HitActor))
+		{
+			HitResults.Add(HitActor, Hit);
+		}
+	}
+
+	for (auto& HitResult : HitResults)
+	{
+		AActor* Actor = HitResult.Key;
+		const FHitResult& Hit = HitResult.Value;
+
+		UGameplayStatics::ApplyPointDamage(Actor, AttackPower, Hit.ImpactPoint, Hit, 
+			GetController(), this, UDamageType::StaticClass());
+
+		ICombatReactInterface* Object = Cast<ICombatReactInterface>(Actor);
+		if (Object)
+		{
+			Object->ApplyHit(Hit, this);
+		}
+	}
 }
 
 void APlayerCharacter::Server_PerformDodge_Implementation()
@@ -449,11 +512,13 @@ bool APlayerCharacter::Server_ToggleHold_Validate()
 
 void APlayerCharacter::OnRep_EchoState()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[OnRep_EchoState] EchoState [%d]"), (int)EchoState);
+
 	switch (EchoState)
 	{
 	case EPlayerState::EPS_Dead:
 	{
-		ResponsePlayerDead();
+		//Multicast_ResponsePlayerDead();
 		break;
 	}
 	case EPlayerState::EPS_Attack:
@@ -465,9 +530,20 @@ void APlayerCharacter::OnRep_EchoState()
 	case EPlayerState::EPS_HitReact:
 		break;
 	}
+
+	/*if (PreviousEchoState == EPlayerState::EPS_Dead
+		&& EchoState == EPlayerState::EPS_Locomotion)
+	{
+		if (UAnimInstance* Anim = GetMesh()->GetAnimInstance())
+		{
+			Anim->StopAllMontages(0.2f);
+		}
+	}
+	PreviousEchoState = EchoState;*/
+
 }
 
-void APlayerCharacter::ResponsePlayerDead()
+void APlayerCharacter::Multicast_ResponsePlayerDead_Implementation()
 {
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -479,7 +555,7 @@ void APlayerCharacter::ResponsePlayerDead()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block); // 지면만 막기
-	
+
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 }

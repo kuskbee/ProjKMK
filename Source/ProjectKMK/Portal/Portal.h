@@ -43,11 +43,22 @@ protected:
 
 public:	
 	void HidePortal();
-	void EnterOpening(AAltar* _Altar); //:ALTAR:  input param : Altar
+
+	UFUNCTION(Server, Reliable)
+	void Server_EnterOpening(AAltar* _Altar);
+	void Server_EnterOpening_Implementation(AAltar* _Altar);
+
 	bool IsHidden();
-	void EnterOpen();
+
+	UFUNCTION(Server, Reliable)
+	void Server_EnterOpen();
+	void Server_EnterOpen_Implementation();
+
 	void MoveNextLevel(APawn* Target);
-	void EnterClosing();
+
+	UFUNCTION(Server, Reliable)
+	void Server_EnterClosing();
+	void Server_EnterClosing_Implementation();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlayPortalVFX(EPortalState Type, bool bSpawn);
@@ -82,9 +93,12 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_PortalState, VisibleAnywhere, BlueprintReadOnly, Category = "Portal")
 	EPortalState PortalState;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Portal")
 	TObjectPtr<AAltar> Altar;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")
 	TObjectPtr<ACameraActor> PortalCamera;
+
+
+	FTimerHandle OpeningTimerHandle;
 };

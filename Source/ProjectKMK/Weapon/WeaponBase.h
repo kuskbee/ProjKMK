@@ -32,13 +32,13 @@ protected:
 	bool DoBoxTrace(AActor* TargetActor, FHitResult& OutHit);
 	bool HasSameMonsterTag(AActor* TargetActor);
 
-	UFUNCTION()
+	/*UFUNCTION()
 	void OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex,
 		bool bFromSweep,
-		const FHitResult& SweepResult);
+		const FHitResult& SweepResult);*/
 
 public: 
 	UPROPERTY(VisibleAnywhere, Category = "Components", BlueprintReadOnly)

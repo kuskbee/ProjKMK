@@ -58,6 +58,8 @@ void APortal::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		return;
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("[Portal] OnBoxBeginOverlap"));
+
 	APawn* OverlappedPawn = Cast<APawn>(OtherActor);
 	if (IsValid(OverlappedPawn))
 	{
@@ -67,20 +69,14 @@ void APortal::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 
 void APortal::OnOpeningEffectFinished(UParticleSystemComponent* PSystem)
 {
-	if (PortalState == EPortalState::EPS_Opening)
+	/*if (PortalState == EPortalState::EPS_Opening)
 	{
-		EnterOpen();
-	}
+		Server_EnterOpen();
+	}*/
 }
 
 void APortal::HidePortal()
 {
-	// :MULTI:
-	if (!HasAuthority())
-	{
-		return;
-	}
-
 	PortalState = EPortalState::EPS_Hidden;
 	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -89,20 +85,28 @@ void APortal::HidePortal()
 	Multicast_PlayPortalVFX(EPortalState::EPS_Closing, false);
 }
 
-void APortal::EnterOpening(AAltar* _Altar)
+void APortal::Server_EnterOpening_Implementation(AAltar* _Altar)
 {
-	// :MULTI:
-	if (!HasAuthority())
-	{
-		return;
-	}
-
 	Altar = _Altar;
 	PortalState = EPortalState::EPS_Opening;
 
-	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, true);
+	if (IsValid(Altar))
+	{
+		Altar->Multicast_ShowOpenEffect();
+	}
 
+	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, true);
 	Multicast_ChangePortalView();
+
+	// 이펙트 재생 길이(예: 2.5초)만큼 지난 뒤 EnterOpen 호출
+	// VFX_OpeningTemplate->GetDuration() 으로도 가져올 수 있습니다
+	GetWorldTimerManager().SetTimer(
+		OpeningTimerHandle,
+		this,
+		&APortal::Server_EnterOpen,
+		2.5f,
+		false
+	);
 }
 
 bool APortal::IsHidden()
@@ -110,18 +114,14 @@ bool APortal::IsHidden()
 	return (PortalState == EPortalState::EPS_Hidden);
 }
 
-void APortal::EnterOpen()
+void APortal::Server_EnterOpen_Implementation()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Server] EnterOpen"));
 	PortalState = EPortalState::EPS_Open;
 	Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
-	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, false);
+	//Multicast_PlayPortalVFX(EPortalState::EPS_Opening, false);
 	Multicast_PlayPortalVFX(EPortalState::EPS_Open, true);
-		
-	if (IsValid(Altar))
-	{
-		Altar->Multicast_ShowOpenEffect();
-	}
 }
 
 void APortal::MoveNextLevel(APawn* Target)
@@ -143,6 +143,7 @@ void APortal::MoveNextLevel(APawn* Target)
 				const bool bAbsolute = false;
 				const bool bSeamless = false;  // 필요하면 GameMode에서 bUseSeamlessTravel = true;
 
+				UE_LOG(LogTemp, Warning, TEXT("[Portal] MoveNextLevel [%s]"), *TravelURL);
 				GetWorld()->ServerTravel(TravelURL, bAbsolute, bSeamless);
 			}
 		}
@@ -153,14 +154,8 @@ void APortal::MoveNextLevel(APawn* Target)
 	}
 }
 
-void APortal::EnterClosing()
+void APortal::Server_EnterClosing_Implementation()
 {
-	// :MULTI:
-	if (!HasAuthority())
-	{
-		return;
-	}
-
 	HidePortal();
 	PortalState = EPortalState::EPS_Closing;
 	Multicast_PlayPortalVFX(EPortalState::EPS_Closing, true);

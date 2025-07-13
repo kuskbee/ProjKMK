@@ -57,7 +57,7 @@ void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	WeaponBox->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::OnWeaponBoxOverlap);
+	//WeaponBox->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::OnWeaponBoxOverlap);
 
 	AActor* IgnoreActor = Cast<AActor>(OwnerCharacter);
 	WeaponBox->IgnoreActorWhenMoving(IgnoreActor, true);
@@ -76,7 +76,8 @@ void AWeaponBase::Tick(float DeltaTime)
 
 void AWeaponBase::SetWeaponCollisionEnable(bool IsEnable)
 {
-	if (IsEnable)
+	// 공격 방식을 플레이어에서 직접 공격 방식으로 변경하여 주석처리
+	/*if (IsEnable)
 	{
 		WeaponBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
@@ -84,7 +85,7 @@ void AWeaponBase::SetWeaponCollisionEnable(bool IsEnable)
 	{
 		WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		ClearIgnoreActors();
-	}
+	}*/
 }
 
 void AWeaponBase::ClearIgnoreActors()
@@ -150,56 +151,55 @@ bool AWeaponBase::HasSameMonsterTag(AActor* TargetActor)
 		return false;
 	}
 
-	//bool bTargetHasTag = TargetActor->ActorHasTag(FName(TEXT("Monster")));
-	//bool bOwnerHasTag = OwnerCharacter->ActorHasTag(FName(TEXT("Monster")));
 	bool bTargetHasTag = TargetActor->ActorHasTag("Monster");
 	bool bOwnerHasTag = OwnerCharacter->ActorHasTag("Monster");
 	return (bTargetHasTag && bOwnerHasTag);
 }
 
-void AWeaponBase::OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	//서버에서만 처리
-	if (!HasAuthority()) return;
-
-	UE_LOG(LogTemp, Warning, TEXT("[Weapon][Server] Overlap hit on: %s"), *OtherActor->GetName());
-	// 몬스터끼리 데미지받는 상황 막음
-	if (HasSameMonsterTag(OtherActor))
-	{
-		return;
-	}
-
-	FHitResult HitResult;
-	bool bHit = DoBoxTrace(OtherActor, HitResult);
-	if (bHit)
-	{
-		TObjectPtr<AActor> DamagedActor = HitResult.GetActor();
-
-		if (DamagedActor != OtherActor)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[Weapon][Server] After DoBoxTrace %s / %s"), *OtherActor->GetName(), *DamagedActor->GetName() );
-			return;
-		}
-
-		// 몬스터끼리 데미지받는 상황 막음
-		if (HasSameMonsterTag(DamagedActor)) 
-		{
-			return;
-		}
-
-		if (IsValid(OwnerCharacter))
-		{
-			IgnoreActors.AddUnique(DamagedActor);
-
-			UGameplayStatics::ApplyPointDamage(DamagedActor, AttackPower, HitResult.ImpactPoint, HitResult,
-				OwnerCharacter->GetController(), this, UDamageType::StaticClass());
-
-			ICombatReactInterface* Hittable = Cast<ICombatReactInterface>(DamagedActor);
-			if (Hittable)
-			{
-				Hittable->ApplyHit(HitResult, OwnerCharacter);
-			}
-		}
-	}
-}
+// => 공격 방식 변경(Animation Notify : PlayerAttack -> PlayerCharacter에서 공격하도록 변경)
+//void AWeaponBase::OnWeaponBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//{
+//	//서버에서만 처리
+//	if (!HasAuthority()) return;
+//
+//	UE_LOG(LogTemp, Warning, TEXT("[Weapon][Server] Overlap hit on: %s"), *OtherActor->GetName());
+//	// 몬스터끼리 데미지받는 상황 막음
+//	if (HasSameMonsterTag(OtherActor))
+//	{
+//		return;
+//	}
+//
+//	FHitResult HitResult;
+//	bool bHit = DoBoxTrace(OtherActor, HitResult);
+//	if (bHit)
+//	{
+//		TObjectPtr<AActor> DamagedActor = HitResult.GetActor();
+//
+//		if (DamagedActor != OtherActor)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("[Weapon][Server] After DoBoxTrace %s / %s"), *OtherActor->GetName(), *DamagedActor->GetName() );
+//			return;
+//		}
+//
+//		// 몬스터끼리 데미지받는 상황 막음
+//		if (HasSameMonsterTag(DamagedActor)) 
+//		{
+//			return;
+//		}
+//
+//		if (IsValid(OwnerCharacter))
+//		{
+//			IgnoreActors.AddUnique(DamagedActor);
+//
+//			UGameplayStatics::ApplyPointDamage(DamagedActor, AttackPower, HitResult.ImpactPoint, HitResult,
+//				OwnerCharacter->GetController(), this, UDamageType::StaticClass());
+//
+//			ICombatReactInterface* Hittable = Cast<ICombatReactInterface>(DamagedActor);
+//			if (Hittable)
+//			{
+//				Hittable->ApplyHit(HitResult, OwnerCharacter);
+//			}
+//		}
+//	}
+//}
 
