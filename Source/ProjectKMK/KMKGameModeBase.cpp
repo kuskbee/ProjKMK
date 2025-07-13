@@ -105,7 +105,7 @@ void AKMKGameModeBase::InitiateRespawn(AKMKPlayerController* PlayerControllerToR
 		}
 	}
 	
-	CharacterToRespawn->RespawnCharacter(SpawnLocation, SpawnRotation);
+	CharacterToRespawn->Multicast_RespawnCharacter(SpawnLocation, SpawnRotation);
 
 	if (PointToSpawn && IsValid(PointToSpawn))
 	{

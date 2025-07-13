@@ -50,8 +50,8 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser);
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = "Character")
-	void RespawnCharacter(FVector NewLocation, FRotator NewRotation);
-	void RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation);
+	void Multicast_RespawnCharacter(FVector NewLocation, FRotator NewRotation);
+	void Multicast_RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation);
 
 	// 히트 판정 + 피해
 	UFUNCTION(Server, Reliable)
@@ -96,7 +96,9 @@ protected:
 	UFUNCTION()
 	void OnRep_EchoState();
 
-	void ResponsePlayerDead();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ResponsePlayerDead();
+	void Multicast_ResponsePlayerDead_Implementation();
 
 	UFUNCTION()
 	void OnRep_IsHold();
@@ -228,6 +230,8 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_EchoState, EditAnywhere, Category = "State", BlueprintReadOnly)
 	EPlayerState EchoState = EPlayerState::EPS_Locomotion;
+
+	//EPlayerState PreviousEchoState;
 
 	UPROPERTY(ReplicatedUsing = OnRep_IsHold, VisibleAnywhere, Category = "State", BlueprintReadOnly)
 	bool IsHold;

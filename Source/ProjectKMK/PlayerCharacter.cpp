@@ -73,6 +73,8 @@ APlayerCharacter::APlayerCharacter()
 	bReplicates = true;
 
 	SetReplicateMovement(true);
+
+	//PreviousEchoState = EchoState;
 }
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -190,8 +192,9 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	return 0.0f;
 }
 
-void APlayerCharacter::RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation)
+void APlayerCharacter::Multicast_RespawnCharacter_Implementation(FVector NewLocation, FRotator NewRotation)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[RespawnCharacter]"));
 	SetActorLocation(NewLocation);
 	SetActorRotation(NewRotation);
 
@@ -200,28 +203,23 @@ void APlayerCharacter::RespawnCharacter_Implementation(FVector NewLocation, FRot
 		StatusComponent->InitializeStatus();
 	}
 
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		AnimInstance->StopAllMontages(0.2f);
-	}
-
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	EchoState = EPlayerState::EPS_Locomotion;
 
-	if (GetCharacterMovement()->MovementMode == MOVE_None)
+	/*if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}
+		AnimInstance->StopAllMontages(0.2f);
+	}*/
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		EnableInput(PC);
 	}
-
-	EchoState = EPlayerState::EPS_Locomotion;
 }
 
 void APlayerCharacter::BindEventStatusComponent()
@@ -243,10 +241,13 @@ void APlayerCharacter::DoDeath(bool bIsDeadStatus)
 		return;
 	}
 
+	Multicast_ResponsePlayerDead();
+
 	DeathIndex = FMath::RandRange(0, DeathMontage->GetNumSections() - 1);
 	FName SectionName = DeathMontage->GetSectionName(DeathIndex);
 	
 	Multicast_PlayDeathMontage(SectionName);
+	
 }
 
 void APlayerCharacter::OnMove(const FInputActionValue& Value)
@@ -511,11 +512,13 @@ bool APlayerCharacter::Server_ToggleHold_Validate()
 
 void APlayerCharacter::OnRep_EchoState()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[OnRep_EchoState] EchoState [%d]"), (int)EchoState);
+
 	switch (EchoState)
 	{
 	case EPlayerState::EPS_Dead:
 	{
-		ResponsePlayerDead();
+		//Multicast_ResponsePlayerDead();
 		break;
 	}
 	case EPlayerState::EPS_Attack:
@@ -527,9 +530,20 @@ void APlayerCharacter::OnRep_EchoState()
 	case EPlayerState::EPS_HitReact:
 		break;
 	}
+
+	/*if (PreviousEchoState == EPlayerState::EPS_Dead
+		&& EchoState == EPlayerState::EPS_Locomotion)
+	{
+		if (UAnimInstance* Anim = GetMesh()->GetAnimInstance())
+		{
+			Anim->StopAllMontages(0.2f);
+		}
+	}
+	PreviousEchoState = EchoState;*/
+
 }
 
-void APlayerCharacter::ResponsePlayerDead()
+void APlayerCharacter::Multicast_ResponsePlayerDead_Implementation()
 {
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -541,7 +555,7 @@ void APlayerCharacter::ResponsePlayerDead()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block); // 지면만 막기
-	
+
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 }
