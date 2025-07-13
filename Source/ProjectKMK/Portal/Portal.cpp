@@ -69,10 +69,10 @@ void APortal::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 
 void APortal::OnOpeningEffectFinished(UParticleSystemComponent* PSystem)
 {
-	if (PortalState == EPortalState::EPS_Opening)
+	/*if (PortalState == EPortalState::EPS_Opening)
 	{
 		Server_EnterOpen();
-	}
+	}*/
 }
 
 void APortal::HidePortal()
@@ -90,9 +90,23 @@ void APortal::Server_EnterOpening_Implementation(AAltar* _Altar)
 	Altar = _Altar;
 	PortalState = EPortalState::EPS_Opening;
 
-	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, true);
+	if (IsValid(Altar))
+	{
+		Altar->Multicast_ShowOpenEffect();
+	}
 
+	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, true);
 	Multicast_ChangePortalView();
+
+	// 이펙트 재생 길이(예: 2.5초)만큼 지난 뒤 EnterOpen 호출
+	// VFX_OpeningTemplate->GetDuration() 으로도 가져올 수 있습니다
+	GetWorldTimerManager().SetTimer(
+		OpeningTimerHandle,
+		this,
+		&APortal::Server_EnterOpen,
+		2.5f,
+		false
+	);
 }
 
 bool APortal::IsHidden()
@@ -102,16 +116,12 @@ bool APortal::IsHidden()
 
 void APortal::Server_EnterOpen_Implementation()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Server] EnterOpen"));
 	PortalState = EPortalState::EPS_Open;
 	Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
-	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, false);
+	//Multicast_PlayPortalVFX(EPortalState::EPS_Opening, false);
 	Multicast_PlayPortalVFX(EPortalState::EPS_Open, true);
-
-	if (IsValid(Altar))
-	{
-		Altar->Multicast_ShowOpenEffect();
-	}
 }
 
 void APortal::MoveNextLevel(APawn* Target)

@@ -98,4 +98,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")
 	TObjectPtr<ACameraActor> PortalCamera;
+
+
+	FTimerHandle OpeningTimerHandle;
 };
