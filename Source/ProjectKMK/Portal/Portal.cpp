@@ -98,8 +98,6 @@ void APortal::Server_EnterOpening_Implementation(AAltar* _Altar)
 	Multicast_PlayPortalVFX(EPortalState::EPS_Opening, true);
 	Multicast_ChangePortalView();
 
-	// 이펙트 재생 길이(예: 2.5초)만큼 지난 뒤 EnterOpen 호출
-	// VFX_OpeningTemplate->GetDuration() 으로도 가져올 수 있습니다
 	GetWorldTimerManager().SetTimer(
 		OpeningTimerHandle,
 		this,

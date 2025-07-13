@@ -9,6 +9,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, EGameState, NewState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTeamDeathCountChanged, int32, CurrentTeamDeathCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRestartCountdownChanged, int32, RestartCountdown);
 
 /**
  * 
@@ -40,8 +41,17 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedTeamDeathCount, BlueprintReadOnly, Category = "Game State")
 	int32 ReplicatedTeamDeathCount = 0;
 
+	UPROPERTY(ReplicatedUsing = OnRep_RestartCountdown)
+	int32 RestartCountDown = -1;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnRestartCountdownChanged OnRestartCountdownChanged;
+
 	UFUNCTION()
 	void OnRep_ReplicatedTeamDeathCount();
+
+	UFUNCTION()
+	void OnRep_RestartCountdown();
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

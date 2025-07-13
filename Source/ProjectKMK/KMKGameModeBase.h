@@ -23,26 +23,56 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void NotifyPlayerDead(AKMKPlayerController* PlayerControllerThatDied);
 
+	void StartCountdown();
+
+	UFUNCTION()
+	void RestartCountdownTick();
+
+	void OnCountdownFinished();
+
+	void StopCountdown();
 
 
 protected:
+
+	virtual void BeginPlay() override;
+
+	ARespawnPoint* GetAvailableRespawnPoint();
+	ARespawnPoint* GetAvailableRespawnPoint(AKMKPlayerController* KMKPlayerController);
+
+	void InitiateRespawn(AKMKPlayerController* PlayerControllerToRespawn);
+
 	UPROPERTY()
 	int32 TeamDeathCount = 0;
+
 	UPROPERTY(EditDefaultsOnly)
 	int32 MaxTeamDeath = 3;
+
 	UPROPERTY(EditDefaultsOnly)
 	float RespawnDelay = 8.0f;
 
-	virtual void BeginPlay() override;
+	UPROPERTY(EditDefaultsOnly)
+	int32 RestartCountdown = 10.f;
+
+	int32 CurrentCountdown = 0.f;
+
+	UPROPERTY()
+	FTimerHandle RestartCountdownTimerHandle;
+
+	FTimerHandle LevelTravelHandle;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FString RestartServerLevelName = TEXT("/Game/Level/Maps/Map_PhaseNature");
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FString RestartClientLevelName = TEXT("/Game/Level/Maps/LobbyMap");
 
 	UPROPERTY()
 	TArray<ARespawnPoint*> RespawnPoint;
 
 	UPROPERTY()
 	TMap<AKMKPlayerController*, FTimerHandle> RespawnTimer;
+public:
+	void SetRestartCountdown(int32 Countdown) { RestartCountdown = Countdown; }
 
-	ARespawnPoint* GetAvailableRespawnPoint();
-	ARespawnPoint* GetAvailableRespawnPoint(AKMKPlayerController* KMKPlayerController);
-
-	void InitiateRespawn(AKMKPlayerController* PlayerControllerToRespawn);
 };

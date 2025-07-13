@@ -17,10 +17,7 @@ void AMyHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (AInGameGameState* GS = GetWorld()->GetGameState<AInGameGameState>())
-	{
-		GS->OnGameStateChanged.AddDynamic(this, &AMyHUD::OnGameStateChanged);
-	}
+	BindGameStateEvent();
 
 	FSoftClassPath HudWidgetPath(TEXT("/UiPlugin/CRPlugIn/Content/BluePrints/Widget/InGameHudWidget.InGameHudWidget_C"));
 
@@ -115,6 +112,16 @@ void AMyHUD::EventPlayerUpdateHP(float CurHP, float MaxHP)
 	}
 }
 
+void AMyHUD::BindGameStateEvent()
+{
+	if (AInGameGameState* GS = GetWorld()->GetGameState<AInGameGameState>())
+	{
+		GS->OnGameStateChanged.AddDynamic(this, &AMyHUD::OnGameStateChanged);
+		GS->OnRestartCountdownChanged.AddDynamic(this, &AMyHUD::OnRestartCountdownChanged);
+	}
+
+}
+
 void AMyHUD::OnGameStateChanged(EGameState NewState)
 {
 	EventChangeGameState(NewState);
@@ -122,4 +129,12 @@ void AMyHUD::OnGameStateChanged(EGameState NewState)
 
 void AMyHUD::OnPlayerDaed(bool bDead)
 {
+}
+
+void AMyHUD::OnRestartCountdownChanged(int32 RestartCountdown)
+{
+	if (IsValid(HudWidget))
+	{
+		HudWidget->SetRestartCountdown(RestartCountdown);
+	}
 }
