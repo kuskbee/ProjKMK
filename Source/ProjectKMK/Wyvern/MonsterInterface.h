@@ -23,7 +23,8 @@ class PROJECTKMK_API IMonsterInterface
 public:
 	virtual float Attack() = 0;
 	virtual bool AddTargetActor(AActor* InTarget) = 0;
-	virtual bool RemoveTargetActor(AActor* InTarget) = 0;
+	virtual void RemoveTargetActor(AActor* InTarget) = 0;
 	virtual AActor* ChangeTargetActor() = 0;
 	virtual void CheckTargetActors() = 0;
+	virtual void CheckTargetActor(AActor* InTarget) = 0;
 };

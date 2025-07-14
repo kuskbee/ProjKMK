@@ -36,9 +36,10 @@ protected:
 	// WyvernInterface Implement
 	virtual float Attack() override;
 	virtual bool AddTargetActor(AActor* InTarget) override;
-	virtual bool RemoveTargetActor(AActor* InTarget) override;
+	virtual void RemoveTargetActor(AActor* InTarget) override;
 	virtual AActor* ChangeTargetActor() override;
 	virtual void CheckTargetActors() override;
+	virtual void CheckTargetActor(AActor* InTarget) override;
 
 	// CombatReactInterface Implement
 	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;
@@ -133,9 +134,6 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	float MaxHP;
 
-	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
-	float Damage = 100.0f;
-
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> HowlingMontage;
 
@@ -174,6 +172,12 @@ public:
 
 	UFUNCTION()
 	void OnRep_MonAIState();
+
+	UPROPERTY(ReplicatedUsing = OnRep_Damage, VisibleAnywhere, Category = "Data", BlueprintReadOnly)
+	float Damage;
+
+	UFUNCTION()
+	void OnRep_Damage();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -15,9 +15,4 @@ class PROJECTKMK_API UBTTask_MyCheckAttackEnd : public UBTTask_BlackboardBase
 	GENERATED_BODY()
 public:
 	EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
-
-	UFUNCTION()
-	void EventEndAttackMontage(UAnimMontage* Montage, bool bInterrupted);
-
-	UBehaviorTreeComponent* CachedOwnerComp;
 };

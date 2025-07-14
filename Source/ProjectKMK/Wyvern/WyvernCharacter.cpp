@@ -132,6 +132,7 @@ float AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
+			Damage = Skill->Damage;
 			PlayerRate = 1.2f;
 		}
 		break;
@@ -143,6 +144,7 @@ float AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
+			Damage = Skill->Damage;
 			PlayerRate = 1.2f;
 		}
 		break;
@@ -153,6 +155,7 @@ float AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
+			Damage = Skill->Damage;
 			PlayerRate = 1.4f;
 		}
 		break;
@@ -198,27 +201,23 @@ bool AWyvernCharacter::AddTargetActor(AActor* InTarget)
 	return true;
 }
 
-bool AWyvernCharacter::RemoveTargetActor(AActor* InTarget)
+void AWyvernCharacter::RemoveTargetActor(AActor* InTarget)
 {
-	if (!TargetActors.Contains(InTarget))
+	if (TargetActors.Contains(InTarget))
 	{
-		return false;
+		TargetActors.Remove(InTarget);
+
+		APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
+		if (PlayCharacter)
+		{
+			HideMonsterHealthBar(PlayCharacter);
+		}
 	}
-
-	TargetActors.Remove(InTarget);
-
-	APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
-	if (PlayCharacter)
-	{
-		HideMonsterHealthBar(PlayCharacter);
-	}
-
-	return true;
 }
 
 AActor* AWyvernCharacter::ChangeTargetActor()
 {
-	if (TargetActors.Num() <= 1)
+	if (TargetActors.Num() <= 0)
 	{
 		return nullptr;
 	}
@@ -228,17 +227,23 @@ AActor* AWyvernCharacter::ChangeTargetActor()
 
 void AWyvernCharacter::CheckTargetActors()
 {
+
 	for (AActor* Target : TargetActors)
 	{
 		APlayerCharacter* Player = Cast<APlayerCharacter>(Target);
-		if (Player)
+		if (!Player)
 		{
-			if (Player->EchoState == EPlayerState::EPS_Dead)
-			{
-				RemoveTargetActor(Player);
-				return CheckTargetActors();
-			}
+			RemoveTargetActor(Player);
+			return CheckTargetActors();
 		}
+	}
+}
+
+void AWyvernCharacter::CheckTargetActor(AActor* InTarget)
+{
+	if (TargetActors.Contains(InTarget))
+	{
+		TargetActors.Remove(InTarget);
 	}
 }
 
@@ -247,7 +252,7 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 	FVector AttackLocation;
 	if (IsRightHand)
 	{
-		AttackLocation = GetMesh()->GetSocketLocation("rhand_socket");
+		AttackLocation = GetMesh()->GetSocketLocation("Bip001_R_Hand");
 	}
 	else
 	{
@@ -660,6 +665,11 @@ void AWyvernCharacter::OnRep_MonAIState()
 	case EAIState::Runaway:
 		break;
 	}
+}
+
+void AWyvernCharacter::OnRep_Damage()
+{
+
 }
 
 void AWyvernCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
