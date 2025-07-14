@@ -34,6 +34,8 @@ public:
 	UFUNCTION()
 	void EventPlayerUpdateHP(float CurHP, float MaxHP);
 
+	void BindGameStateEvent();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UHudWidget> HudWidget;
 
@@ -47,4 +49,7 @@ public:
 
 	UFUNCTION()
 	void OnPlayerDaed(bool bDead);
+
+	UFUNCTION()
+	void OnRestartCountdownChanged(int32 RestartCountdown);
 };

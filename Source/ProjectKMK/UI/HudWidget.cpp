@@ -1,10 +1,15 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "HudWidget.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 
+void UHudWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+}
 
 void UHudWidget::DoGameWin()
 {
@@ -12,11 +17,13 @@ void UHudWidget::DoGameWin()
 
 	PlayerHealthBar->SetVisibility(ESlateVisibility::Collapsed);
 	MonsterHealthBar->SetVisibility(ESlateVisibility::Collapsed);
+	CountdownText->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UHudWidget::DoGameOver()
 {
 	GameLoseUI->SetVisibility(ESlateVisibility::Visible);
+	CountdownText->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UHudWidget::ShowMonsterHealthBar()
@@ -39,5 +46,22 @@ void UHudWidget::SetPlayerHpPercent(float CurHP, float MaxHP)
 	{
 		float Percent = CurHP / MaxHP;
 		PlayerHealthBar->SetPercent(Percent);
+	}
+}
+
+void UHudWidget::SetRestartCountdown(int32 RestartCountdown)
+{
+	if (CountdownText)
+	{
+		const FString LoadingMent = TEXT("초 뒤 로비로 이동합니다");
+
+		int DotCount = 3 - RestartCountdown % 3;
+		CountdownString = FString::Printf(TEXT("%d%s"), RestartCountdown, *LoadingMent);
+		for (int i = 0; i < DotCount; ++i)
+		{
+			CountdownString += TEXT(".");
+		}
+
+		CountdownText->SetText(FText::FromString(CountdownString));
 	}
 }

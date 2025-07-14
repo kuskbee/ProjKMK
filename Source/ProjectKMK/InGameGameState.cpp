@@ -1,10 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "InGameGameState.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/PlayerController.h"
 #include "UI/MyHUD.h"
+#include "KMKGameModeBase.h"
 
 AInGameGameState::AInGameGameState()
 {
@@ -17,7 +18,7 @@ void AInGameGameState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//°ÔÀÓ ½ÃÀÛ ½Ã ÃÊ±â »óÅÂ ¼³Á¤(ÇöÀç Ready »óÅÂ - ÁÖ¼®Ã³¸®)
+	//ê²Œì„ ì‹œì‘ ì‹œ ì´ˆê¸° ìƒíƒœ ì„¤ì •(í˜„ì¬ Ready ìƒíƒœ - ì£¼ì„ì²˜ë¦¬)
 	/*if (HasAuthority())
 	{
 		SetCurrentGameState(EGameState::EGS_Ready);
@@ -40,30 +41,49 @@ void AInGameGameState::OnRep_CurrentGameState()
 
 void AInGameGameState::SetCurrentGameState(EGameState NewState)
 {
-	//¼­¹ö¿¡¼­¸¸ »óÅÂ º¯°æµÉ ¶§¸¸ È£Ãâ
+	//ì„œë²„ì—ì„œë§Œ ìƒíƒœ ë³€ê²½ë  ë•Œë§Œ í˜¸ì¶œ
 	if (HasAuthority() && CurrentGameState != NewState)
 	{
-		//¼­¹ö¿¡¼­ »óÅÂ º¯°æ
+		//ì„œë²„ì—ì„œ ìƒíƒœ ë³€ê²½
 		CurrentGameState = NewState;
 
-		//Listen Server ¿ëµµ
+		//Listen Server ìš©ë„
 		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 		{
 			if (AMyHUD* LocalHud = Cast<AMyHUD>(PC->GetHUD()))
 			{
 				LocalHud->EventChangeGameState(CurrentGameState);
 			}
-		}//Dedicated Server »ç¿ë ½Ã ÁÖ¼®(»èÁ¦)Ã³¸®ÇÒ °Í
+		}//Dedicated Server ì‚¬ìš© ì‹œ ì£¼ì„(ì‚­ì œ)ì²˜ë¦¬í•  ê²ƒ
 
 		OnGameStateChanged.Broadcast(CurrentGameState);
+
+		// ì¬ì‹œì‘ ë¡œì§
+		if (CurrentGameState == EGameState::EGS_Lose ||
+			CurrentGameState == EGameState::EGS_Win)
+		{
+			if (AKMKGameModeBase* GM = GetWorld()->GetAuthGameMode<AKMKGameModeBase>())
+			{
+				if (CurrentGameState == EGameState::EGS_Win) {
+					GM->SetRestartCountdown(15);
+				}
+				GM->StartCountdown();
+			}
+		}
 	}
 }
 
 void AInGameGameState::OnRep_ReplicatedTeamDeathCount()
 {
-	//HUD & UI ÆÀ µ¥½º Ä«¿îÆ® ¾÷µ¥ÀÌÆ® ½Ã ·ÎÁ÷ Ãß°¡
-
+	//HUD & UI íŒ€ ë°ìŠ¤ ì¹´ìš´íŠ¸ ì—…ë°ì´íŠ¸ ì‹œ ë¡œì§ ì¶”ê°€
+	UE_LOG(LogTemp, Warning, TEXT("[AInGameGameState::OnRep_ReplicatedTeamDeathCount] %d"), ReplicatedTeamDeathCount);
 	OnTeamDeathCountChanged.Broadcast(ReplicatedTeamDeathCount);
+}
+
+void AInGameGameState::OnRep_RestartCountdown()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AInGameGameState::OnRep_RestartCountdown] %d"), RestartCountDown);
+	OnRestartCountdownChanged.Broadcast(RestartCountDown);
 }
 
 void AInGameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -72,4 +92,5 @@ void AInGameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(AInGameGameState, CurrentGameState);
 	DOREPLIFETIME(AInGameGameState, ReplicatedTeamDeathCount);
+	DOREPLIFETIME(AInGameGameState, RestartCountDown);
 }
