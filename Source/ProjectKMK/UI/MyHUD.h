@@ -51,5 +51,8 @@ public:
 	void OnPlayerDaed(bool bDead);
 
 	UFUNCTION()
+	void OnRemainingLives(int32 RemainingLives);
+
+	UFUNCTION()
 	void OnRestartCountdownChanged(int32 RestartCountdown);
 };
