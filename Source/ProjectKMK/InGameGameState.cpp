@@ -18,6 +18,13 @@ void AInGameGameState::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (HasAuthority())
+	{
+		OnRep_ReplicatedTeamDeathCount();
+
+		OnTeamDeathCountChanged.Broadcast(3);
+	}
+
 	//게임 시작 시 초기 상태 설정(현재 Ready 상태 - 주석처리)
 	/*if (HasAuthority())
 	{
@@ -75,9 +82,11 @@ void AInGameGameState::SetCurrentGameState(EGameState NewState)
 
 void AInGameGameState::OnRep_ReplicatedTeamDeathCount()
 {
+	const int32 RemainingLives = FMath::Max(0, 3 - ReplicatedTeamDeathCount);
+
 	//HUD & UI 팀 데스 카운트 업데이트 시 로직 추가
-	UE_LOG(LogTemp, Warning, TEXT("[AInGameGameState::OnRep_ReplicatedTeamDeathCount] %d"), ReplicatedTeamDeathCount);
-	OnTeamDeathCountChanged.Broadcast(ReplicatedTeamDeathCount);
+	UE_LOG(LogTemp, Warning, TEXT("[AInGameGameState::OnRep_ReplicatedTeamDeathCount] DeathCount: %d, RemainingLives: %d"), ReplicatedTeamDeathCount, RemainingLives);
+	OnTeamDeathCountChanged.Broadcast(RemainingLives);
 }
 
 void AInGameGameState::OnRep_RestartCountdown()

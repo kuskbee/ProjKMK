@@ -9,6 +9,16 @@
 void UHudWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	if (DeathCountText)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[UHudWidget::NativeConstruct] DeathCountText is valid"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[UHudWidget::NativeConstruct] DeathCountText is NULL! Check UMG binding."));
+	}
+
 }
 
 void UHudWidget::DoGameWin()
@@ -63,5 +73,21 @@ void UHudWidget::SetRestartCountdown(int32 RestartCountdown)
 		}
 
 		CountdownText->SetText(FText::FromString(CountdownString));
+	}
+}
+
+void UHudWidget::SetDeathCount(int32 LifeCount)
+{
+
+
+	if (DeathCountText)
+	{
+
+		UE_LOG(LogTemp, Warning, TEXT("[HudWidget::SetDeathCount] HUD will display: %d"), LifeCount);
+		DeathCountText->SetText(FText::AsNumber(LifeCount));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[HudWidget::SetDeathCount] DeathCount is NULL"));
 	}
 }

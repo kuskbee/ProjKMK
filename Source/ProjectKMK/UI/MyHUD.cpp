@@ -17,8 +17,6 @@ void AMyHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BindGameStateEvent();
-
 	FSoftClassPath HudWidgetPath(TEXT("/UiPlugin/CRPlugIn/Content/BluePrints/Widget/InGameHudWidget.InGameHudWidget_C"));
 
 	UClass* WidgetClass = HudWidgetPath.TryLoadClass<UHudWidget>();
@@ -40,6 +38,8 @@ void AMyHUD::BeginPlay()
 			PC->bShowMouseCursor = false;
 
 			PC->SetInputMode(FInputModeGameOnly());
+		
+			BindGameStateEvent();
 		}
 		else
 		{
@@ -118,6 +118,13 @@ void AMyHUD::BindGameStateEvent()
 	{
 		GS->OnGameStateChanged.AddDynamic(this, &AMyHUD::OnGameStateChanged);
 		GS->OnRestartCountdownChanged.AddDynamic(this, &AMyHUD::OnRestartCountdownChanged);
+		GS->OnTeamDeathCountChanged.AddDynamic(this, &AMyHUD::OnRemainingLives);
+	
+		const int32 RemainingLives = FMath::Max(0, 3 - GS->ReplicatedTeamDeathCount);
+
+		UE_LOG(LogTemp, Warning, TEXT("[MyHUD::BindGameStateEvent] ReplicatedTeamDeathCount: %d, Initial RemainingLives: %d"), GS->ReplicatedTeamDeathCount, RemainingLives);
+
+		OnRemainingLives(RemainingLives);
 	}
 
 }
@@ -129,6 +136,17 @@ void AMyHUD::OnGameStateChanged(EGameState NewState)
 
 void AMyHUD::OnPlayerDaed(bool bDead)
 {
+}
+
+void AMyHUD::OnRemainingLives(int32 RemainingLives)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[MyHUD::OnRemainingLives] Displaying RemainingLives on HUD: %d"), RemainingLives);
+
+
+	if (IsValid(HudWidget))
+	{
+		HudWidget->SetDeathCount(RemainingLives);
+	}
 }
 
 void AMyHUD::OnRestartCountdownChanged(int32 RestartCountdown)

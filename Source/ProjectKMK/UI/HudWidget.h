@@ -42,6 +42,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "UI")
 	FString CountdownString;
 
+	UPROPERTY(meta = (BindWidget), VisibleAnywhere, Category = "UI", BlueprintReadOnly)
+	TObjectPtr<UTextBlock> DeathCountText;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	FString DeathCount;
+
+
+
 	void DoGameWin();
 
 	void DoGameOver();
@@ -54,4 +62,5 @@ public:
 
 	void SetRestartCountdown(int32 RestartCountdown);
 
+	void SetDeathCount(int32 LifeCount);
 };
