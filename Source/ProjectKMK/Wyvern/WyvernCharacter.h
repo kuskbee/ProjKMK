@@ -36,9 +36,10 @@ protected:
 	// WyvernInterface Implement
 	virtual float Attack() override;
 	virtual bool AddTargetActor(AActor* InTarget) override;
-	virtual bool RemoveTargetActor(AActor* InTarget) override;
+	virtual void RemoveTargetActor(AActor* InTarget) override;
 	virtual AActor* ChangeTargetActor() override;
 	virtual void CheckTargetActors() override;
+	virtual void CheckTargetActor(AActor* InTarget) override;
 
 	// CombatReactInterface Implement
 	virtual bool ApplyHit(const FHitResult& HitResult, AActor* HitterActor) override;

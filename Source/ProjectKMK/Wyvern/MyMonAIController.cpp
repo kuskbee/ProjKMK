@@ -83,7 +83,7 @@ void AMyMonAIController::ProcessPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 	{
 		APlayerCharacter* PlayerCharacter = Cast< APlayerCharacter>(Actor);
 
-		if (PlayerCharacter)
+		if (PlayerCharacter && PlayerCharacter->EchoState != EPlayerState::EPS_Dead)
 		{
 			AddTargetActor(Actor);
 		}
@@ -113,14 +113,7 @@ void AMyMonAIController::RemoveTargetActor(AActor* InTarget)
 	IMonsterInterface* Monster = Cast<IMonsterInterface>(GetPawn());
 	if (Monster)
 	{
-		if (Monster->RemoveTargetActor(InTarget))
-		{
-			AActor* CurrentTarget = Cast<AActor>(GetBrainComponent()->GetBlackboardComponent()->GetValueAsObject("TargetActor"));
-			if (CurrentTarget && CurrentTarget == InTarget)
-			{
-				ChangeTargetActor();
-			}
-		}
+		Monster->RemoveTargetActor(InTarget);
 	}
 }
 
@@ -130,10 +123,14 @@ void AMyMonAIController::ChangeTargetActor()
 	if (Monster)
 	{
 		AActor* ChangedTarget = Monster->ChangeTargetActor();
+		UBlackboardComponent* BB = GetBrainComponent()->GetBlackboardComponent();
 		if (ChangedTarget)
 		{
-			UBlackboardComponent* BB = GetBrainComponent()->GetBlackboardComponent();
 			BB->SetValueAsObject("TargetActor", ChangedTarget);
+		}
+		else
+		{
+			BB->SetValueAsEnum("MonAIState", (uint8)EAIState::Patrol);
 		}
 	}
 }
@@ -146,6 +143,7 @@ void AMyMonAIController::CheckTargetActors()
 		Monster->CheckTargetActors();
 	}
 }
+
 
 void AMyMonAIController::RestartBehaviorTree()
 {

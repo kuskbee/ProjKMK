@@ -198,27 +198,23 @@ bool AWyvernCharacter::AddTargetActor(AActor* InTarget)
 	return true;
 }
 
-bool AWyvernCharacter::RemoveTargetActor(AActor* InTarget)
+void AWyvernCharacter::RemoveTargetActor(AActor* InTarget)
 {
-	if (!TargetActors.Contains(InTarget))
+	if (TargetActors.Contains(InTarget))
 	{
-		return false;
+		TargetActors.Remove(InTarget);
+
+		APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
+		if (PlayCharacter)
+		{
+			HideMonsterHealthBar(PlayCharacter);
+		}
 	}
-
-	TargetActors.Remove(InTarget);
-
-	APlayerCharacter* PlayCharacter = Cast<APlayerCharacter>(InTarget);
-	if (PlayCharacter)
-	{
-		HideMonsterHealthBar(PlayCharacter);
-	}
-
-	return true;
 }
 
 AActor* AWyvernCharacter::ChangeTargetActor()
 {
-	if (TargetActors.Num() <= 1)
+	if (TargetActors.Num() <= 0)
 	{
 		return nullptr;
 	}
@@ -228,17 +224,23 @@ AActor* AWyvernCharacter::ChangeTargetActor()
 
 void AWyvernCharacter::CheckTargetActors()
 {
+
 	for (AActor* Target : TargetActors)
 	{
 		APlayerCharacter* Player = Cast<APlayerCharacter>(Target);
-		if (Player)
+		if (!Player)
 		{
-			if (Player->EchoState == EPlayerState::EPS_Dead)
-			{
-				RemoveTargetActor(Player);
-				return CheckTargetActors();
-			}
+			RemoveTargetActor(Player);
+			return CheckTargetActors();
 		}
+	}
+}
+
+void AWyvernCharacter::CheckTargetActor(AActor* InTarget)
+{
+	if (TargetActors.Contains(InTarget))
+	{
+		TargetActors.Remove(InTarget);
 	}
 }
 
