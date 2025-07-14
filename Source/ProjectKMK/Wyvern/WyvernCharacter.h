@@ -134,9 +134,6 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
 	float MaxHP;
 
-	UPROPERTY(VisibleAnywhere, Category = "Data", BlueprintReadOnly)
-	float Damage = 100.0f;
-
 	UPROPERTY(EditAnywhere, Category = "Animations", BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> HowlingMontage;
 
@@ -175,6 +172,12 @@ public:
 
 	UFUNCTION()
 	void OnRep_MonAIState();
+
+	UPROPERTY(ReplicatedUsing = OnRep_Damage, VisibleAnywhere, Category = "Data", BlueprintReadOnly)
+	float Damage;
+
+	UFUNCTION()
+	void OnRep_Damage();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -132,6 +132,7 @@ float AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = FirstPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
+			Damage = Skill->Damage;
 			PlayerRate = 1.2f;
 		}
 		break;
@@ -143,6 +144,7 @@ float AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = SecondPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
+			Damage = Skill->Damage;
 			PlayerRate = 1.2f;
 		}
 		break;
@@ -153,6 +155,7 @@ float AWyvernCharacter::Attack()
 			RandomIndex = FMath::RandRange(0, Names.Num() - 1);
 			Skill = ThirdPhaseTable->FindRow<FST_MyMonsterSkill>(Names[RandomIndex], Names[RandomIndex].ToString());
 			AttackMontage = Skill->SkillAnimMontage;
+			Damage = Skill->Damage;
 			PlayerRate = 1.4f;
 		}
 		break;
@@ -249,7 +252,7 @@ void AWyvernCharacter::DoAttack(bool IsRightHand, bool IsMouth)
 	FVector AttackLocation;
 	if (IsRightHand)
 	{
-		AttackLocation = GetMesh()->GetSocketLocation("rhand_socket");
+		AttackLocation = GetMesh()->GetSocketLocation("Bip001_R_Hand");
 	}
 	else
 	{
@@ -662,6 +665,11 @@ void AWyvernCharacter::OnRep_MonAIState()
 	case EAIState::Runaway:
 		break;
 	}
+}
+
+void AWyvernCharacter::OnRep_Damage()
+{
+
 }
 
 void AWyvernCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
