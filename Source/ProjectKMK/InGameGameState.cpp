@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "UI/MyHUD.h"
 #include "KMKGameModeBase.h"
+#include "Player/InGamePlayerState.h"
+#include "TimerManager.h"
 
 AInGameGameState::AInGameGameState()
 {
@@ -32,6 +34,48 @@ void AInGameGameState::BeginPlay()
 	}*/
 
 }
+
+void AInGameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AInGameGameState, CurrentGameState);
+	DOREPLIFETIME(AInGameGameState, ReplicatedTeamDeathCount);
+	DOREPLIFETIME(AInGameGameState, RestartCountDown);
+}
+
+void AInGameGameState::AddPlayerState(APlayerState* PS)
+{
+	Super::AddPlayerState(PS);
+	PS->ForceNetUpdate();
+
+	FTimerHandle Tmp;
+	GetWorld()->GetTimerManager().SetTimerForNextTick(
+		[this, PS]()
+		{
+			if (IsValid(PS))
+			{
+				Multicast_PlayerJoined(Cast<AInGamePlayerState>(PS));
+			}
+		});
+}
+
+void AInGameGameState::RemovePlayerState(APlayerState* PS)
+{
+	Super::RemovePlayerState(PS);
+	PS->ForceNetUpdate();
+
+	FTimerHandle Tmp;
+	GetWorld()->GetTimerManager().SetTimerForNextTick(
+		[this, PS]()
+		{
+			if (IsValid(PS))
+			{
+				Multicast_PlayerLeft(Cast<AInGamePlayerState>(PS));
+			}
+		});
+}
+
 
 void AInGameGameState::OnRep_CurrentGameState()
 {
@@ -95,11 +139,13 @@ void AInGameGameState::OnRep_RestartCountdown()
 	OnRestartCountdownChanged.Broadcast(RestartCountDown);
 }
 
-void AInGameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AInGameGameState::Multicast_PlayerJoined_Implementation(AInGamePlayerState* NewPS)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AInGameGameState, CurrentGameState);
-	DOREPLIFETIME(AInGameGameState, ReplicatedTeamDeathCount);
-	DOREPLIFETIME(AInGameGameState, RestartCountDown);
+	OnPlayerJoinedDelegate.Broadcast(NewPS);
 }
+
+void AInGameGameState::Multicast_PlayerLeft_Implementation(AInGamePlayerState* LeftPS)
+{
+	OnPlayerLeftDelegate.Broadcast(LeftPS);
+}
+

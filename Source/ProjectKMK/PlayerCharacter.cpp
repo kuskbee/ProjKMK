@@ -413,7 +413,7 @@ void APlayerCharacter::Server_ExecuteAttack_Implementation()
 		ObjectTypes,
 		false,
 		ActorToIgnore,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
 		OutHits,
 		true
 	);

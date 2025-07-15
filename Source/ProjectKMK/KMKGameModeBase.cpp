@@ -9,12 +9,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 #include "TimerManager.h"
+#include "Player/InGamePlayerState.h"
 
 AKMKGameModeBase::AKMKGameModeBase()
 {
 	PlayerControllerClass = AKMKPlayerController::StaticClass();
 	DefaultPawnClass = APlayerCharacter::StaticClass();
 	GameStateClass = AInGameGameState::StaticClass();
+	PlayerStateClass = AInGamePlayerState::StaticClass();
 }
 
 void AKMKGameModeBase::NotifyPlayerDead(AKMKPlayerController* PlayerControllerThatDied)
@@ -118,6 +120,26 @@ void AKMKGameModeBase::BeginPlay()
 
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARespawnPoint::StaticClass(), reinterpret_cast<TArray<AActor*>&>(RespawnPoint));
 }
+
+//void AKMKGameModeBase::PostLogin(APlayerController* NewPlayer)
+//{
+//	Super::PostLogin(NewPlayer);
+//
+//	if (AInGameGameState* GS = GetGameState<AInGameGameState>())
+//	{
+//		GS->Multicast_PlayerJoined(Cast<AInGamePlayerState>(NewPlayer->PlayerState));
+//	}
+//}
+//
+//void AKMKGameModeBase::Logout(AController* Exiting)
+//{
+//	if (AInGameGameState* GS = GetGameState<AInGameGameState>())
+//	{
+//		GS->Multicast_PlayerLeft(Cast<AInGamePlayerState>(Exiting->PlayerState));
+//	}
+//
+//	Super::Logout(Exiting);
+//}
 
 ARespawnPoint* AKMKGameModeBase::GetAvailableRespawnPoint()
 {
