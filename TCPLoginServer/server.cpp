@@ -54,7 +54,7 @@ bool Server::Initialize()
 	memset(&ListenSocketAddr, 0, sizeof(ListenSocketAddr));
 	ListenSocketAddr.sin_family = AF_INET;
 	ListenSocketAddr.sin_addr.s_addr = INADDR_ANY; //****
-	ListenSocketAddr.sin_port = htons(29825);
+	ListenSocketAddr.sin_port = htons(ServerPort);
 	Result = bind(ListenSocket, (sockaddr*)&ListenSocketAddr, sizeof(ListenSocketAddr));
 	if (Result == SOCKET_ERROR)
 	{
@@ -96,7 +96,7 @@ void Server::Run()
 		return;
 	}
 
-	std::cout << "Server is listening on port 8881..." << std::endl;
+	std::cout << "Server is listening on port " << ServerPort << "..." << std::endl;
 
 	while (true)
 	{

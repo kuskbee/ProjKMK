@@ -65,15 +65,7 @@ void AInGameGameState::RemovePlayerState(APlayerState* PS)
 	Super::RemovePlayerState(PS);
 	PS->ForceNetUpdate();
 
-	FTimerHandle Tmp;
-	GetWorld()->GetTimerManager().SetTimerForNextTick(
-		[this, PS]()
-		{
-			if (IsValid(PS))
-			{
-				Multicast_PlayerLeft(Cast<AInGamePlayerState>(PS));
-			}
-		});
+	Multicast_PlayerLeft(Cast<AInGamePlayerState>(PS));
 }
 
 
