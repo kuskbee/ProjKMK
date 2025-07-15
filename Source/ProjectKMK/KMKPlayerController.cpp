@@ -7,6 +7,7 @@
 #include "UI/MyHUD.h"
 #include "StatusComponent.h"
 #include "GameFramework/HUD.h"
+#include "TimerManager.h"
 
 AKMKPlayerController::AKMKPlayerController()
 {
@@ -28,21 +29,7 @@ void AKMKPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (APawn* ControlledPawn = GetPawn())
-	{
-		if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(ControlledPawn))
-		{
-			if (UStatusComponent* StatusComponent = PlayerCharacter->StatusComponent)
-			{
-				if (AMyHUD* LocalHUD = Cast<AMyHUD>(GetHUD()))
-				{
-					LocalHUD->BindPlayerEvent(StatusComponent);
-
-					StatusComponent->UpdateUIHp();
-				}
-			}
-		}
-	}
+	BindStatusComponent();
 }
 
 void AKMKPlayerController::OnRep_Pawn()
@@ -72,5 +59,32 @@ void AKMKPlayerController::SetupEnhanceInput()
 				}
 			}
 		}
+	}
+}
+
+void AKMKPlayerController::BindStatusComponent()
+{
+	bool bResult = false;
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(ControlledPawn))
+		{
+			if (UStatusComponent* StatusComponent = PlayerCharacter->StatusComponent)
+			{
+				if (AMyHUD* LocalHUD = Cast<AMyHUD>(GetHUD()))
+				{
+					LocalHUD->BindPlayerEvent(StatusComponent);
+
+					StatusComponent->UpdateUIHp();
+					bResult = true;
+				}
+			}
+		}
+	}
+
+	if (!bResult)
+	{
+		FTimerHandle Tmp;
+		GetWorld()->GetTimerManager().SetTimer(Tmp, this, &AKMKPlayerController::BindStatusComponent, 0.01f);
 	}
 }

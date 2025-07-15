@@ -28,4 +28,6 @@ public:
 	virtual void OnRep_Pawn() override;
 
 	void SetupEnhanceInput();
+
+	void BindStatusComponent();
 };

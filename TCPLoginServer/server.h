@@ -75,4 +75,6 @@ private:
 	std::string DediServerIp = "kusk.iptime.org";
 	//std::string DediServerIp = "127.0.0.1";
 	unsigned short DediPort = 31684;
+
+	unsigned short ServerPort = 29825;
 };
