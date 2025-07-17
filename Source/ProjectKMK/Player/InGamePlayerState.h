@@ -7,6 +7,8 @@
 #include "InGamePlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSetUserNickname, FString, Nickname);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerJoined, AInGamePlayerState*, PlayerState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerLeft, AInGamePlayerState*, PlayerState);
 
 UCLASS()
 class PROJECTKMK_API AInGamePlayerState : public APlayerState
@@ -18,6 +20,8 @@ protected:
 
 public:
 	virtual void BeginPlay() override;
+	void BindEventToHUD();
+	virtual void Destroyed() override;
 
 	UFUNCTION()
 	void OnRep_Nickname();
@@ -26,6 +30,14 @@ public:
 	void ServerSetNickname(const FString& Nickname);
 	void ServerSetNickname_Implementation(const FString& Nickname);
 
+	//UFUNCTION(NetMulticast, Reliable)
+	//void Multicast_PlayerJoined(AInGamePlayerState* NewPS);
+	//void Multicast_PlayerJoined_Implementation(AInGamePlayerState* NewPS);
+
+	//UFUNCTION(NetMulticast, Reliable)
+	//void Multicast_PlayerLeft(AInGamePlayerState* LeftPS);
+	//void Multicast_PlayerLeft_Implementation(AInGamePlayerState* LeftPS);
+
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_Nickname, BlueprintReadOnly)
 	FString UserNickname = TEXT("Nickname");
@@ -33,4 +45,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnSetUserNickname OnSetUserNicknameDelegate;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerJoined OnPlayerJoinedDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerLeft  OnPlayerLeftDelegate;
 };
