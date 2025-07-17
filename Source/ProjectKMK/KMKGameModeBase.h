@@ -38,7 +38,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	/*virtual void PostLogin(APlayerController* NewPlayer) override;*/
-	//virtual void Logout(AController* Exiting) override;
+	virtual void Logout(AController* Exiting) override;
 
 	ARespawnPoint* GetAvailableRespawnPoint();
 	ARespawnPoint* GetAvailableRespawnPoint(AKMKPlayerController* KMKPlayerController);

@@ -15,17 +15,20 @@ void AInGamePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 void AInGamePlayerState::BeginPlay()
 {
+	Super::BeginPlay();
 	if (const UKMKGameInstance* KMKGI = GetGameInstance<UKMKGameInstance>())
 	{
 		ServerSetNickname(KMKGI->Nickname);
 	}
 
-	BindEventToHUD();
+	if (!IsNetMode(NM_DedicatedServer))
+	{
+		BindEventToHUD();
+	}
 }
 
 void AInGamePlayerState::BindEventToHUD()
 {
-	bool bBind = false;
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{
 		if (AMyHUD* LocalHud = Cast<AMyHUD>(PC->GetHUD()))
@@ -33,21 +36,18 @@ void AInGamePlayerState::BindEventToHUD()
 			LocalHud->BindPlayerStateEvent(this);
 			LocalHud->UpdatePlayerListUI();
 
-			bBind = true;
+			return;
 		}
 	}
-
-	if (!bBind)
-	{
-		FTimerHandle TempBindTimer;
-		GetWorld()->GetTimerManager().SetTimer(TempBindTimer, this, &AInGamePlayerState::BindEventToHUD, 0.1f);
-	}
+	
+	FTimerHandle TempBindTimer;
+	GetWorld()->GetTimerManager().SetTimer(TempBindTimer, this, &AInGamePlayerState::BindEventToHUD, 0.1f);
 }
 
-void AInGamePlayerState::Destroyed()
+void AInGamePlayerState::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Destroyed : %s"), *GetName());
-	Super::Destroyed();
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+	Super::EndPlay(EndPlayReason);
 }
 
 void AInGamePlayerState::OnRep_Nickname()
@@ -63,15 +63,3 @@ void AInGamePlayerState::ServerSetNickname_Implementation(const FString& Nicknam
 
 	ForceNetUpdate();
 }
-//
-//void AInGamePlayerState::Multicast_PlayerJoined_Implementation(AInGamePlayerState* NewPS)
-//{
-//	OnPlayerJoinedDelegate.Broadcast(NewPS);
-//}
-//
-//void AInGamePlayerState::Multicast_PlayerLeft_Implementation(AInGamePlayerState* LeftPS)
-//{
-//	UE_LOG(LogTemp, Warning, TEXT("[AInGameGameState] Multicast_PlayerLeft %s"), *LeftPS->GetName());
-//	OnPlayerLeftDelegate.Broadcast(LeftPS);
-//}
-//
