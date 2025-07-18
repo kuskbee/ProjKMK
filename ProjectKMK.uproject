@@ -5,9 +5,16 @@
 	"Description": "",
 	"Modules": [
 		{
-			"Name": "LFSTest",
+			"Name": "ProjectKMK",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"CoreUObject",
+				"AIModule",
+				"EngineCameras",
+				"UMG"
+			]
 		}
 	],
 	"Plugins": [
@@ -24,6 +31,10 @@
 		},
 		{
 			"Name": "EchoCharacterPlugin",
+			"Enabled": true
+		},
+		{
+			"Name": "HairStrands",
 			"Enabled": true
 		}
 	]

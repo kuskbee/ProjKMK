@@ -1,0 +1,172 @@
+﻿namespace LoginProtocol;
+
+// 클라이언트 -> 서버 메시지 타입
+enum C2S_Message : ushort
+{
+	C2S_KeepAlive,
+	C2S_LoginRequest,
+	C2S_SignUpRequest,
+	C2S_PlayerListRequest,
+	C2S_GameReadyRequest,
+	C2S_MatchmakingRequest
+}
+
+// 서버 -> 클라이언트 메시지 타입
+enum S2C_Message : ushort
+{
+	S2C_KeepAlive,
+	S2C_LoginResponse,
+	S2C_SignUpResponse,
+	S2C_PlayerListResponse,
+	S2C_PlayerInOutLobby,
+	S2C_PlayerChangeState,
+	S2C_CountdownStartGame,
+	S2C_StartGame,
+	S2C_MatchmakingResponse
+}
+
+// 서버가 응답 시 사용할 공통 에러 코드
+enum ErrorCode : uint8 
+{
+    Success,
+	// 로그인 에러
+    Login_Fail_UserNotFound,
+    Login_Fail_InvalidPassword,
+    // 회원가입 에러
+    SignUp_Fail_UsernameExists,
+    SignUp_Fail_NicknameExists,
+	// 매치메이킹/인증 에러
+	Auth_Fail_InvalidToken,
+    // 공통 에러
+    InvalidRequest,
+    ServerError
+}
+
+enum PlayerState : uint8
+{
+	Lobby,
+	Ready,
+	InGame,
+}
+
+table Player
+{
+	user_id : string (id: 0);
+	nickname : string (id: 1);
+	state : PlayerState (id: 2);
+}
+
+//------------------------------------
+table C2S_KeepAlive {}
+
+table S2C_KeepAlive {}
+
+//------------------------------------
+table C2S_LoginRequest
+{
+	userid: string (required); 
+	password: string (required);
+}
+
+table S2C_LoginResponse
+{
+	error_code:ErrorCode = Success;
+	session_token: string;
+	nickname: string;
+}
+
+//------------------------------------
+table C2S_SignUpRequest
+{
+	userid: string (required);
+	password: string (required);
+	nickname: string (required);
+}
+
+table S2C_SignUpResponse
+{
+	error_code: ErrorCode = Success;
+}
+
+//------------------------------------
+table C2S_PlayerListRequest { }
+
+table S2C_PlayerListResponse
+{
+	players : [Player];
+}
+//------------------------------------
+table S2C_PlayerInOutLobby
+{
+	player : Player;
+	is_join: bool;
+}
+//------------------------------------
+table C2S_GameReadyRequest
+{
+	session_token: string;
+	is_ready : bool;
+}
+//------------------------------------
+table S2C_PlayerChangeState
+{
+	user_id: string;
+	state : PlayerState;
+}
+//------------------------------------
+table S2C_CountdownStartGame
+{
+	is_start: bool;
+	countdown: uint32;
+}
+//------------------------------------
+table S2C_StartGame
+{
+	dedi_ip_address: string;
+	dedi_port: ushort;
+}
+//------------------------------------
+table C2S_MatchmakingRequest
+{
+	session_token: string (required);
+}
+
+table S2C_MatchmakingResponse
+{
+	error_code: ErrorCode = Success;
+	ip_address: string;
+	port: ushort;
+}
+
+// ----------------- 최상위 메시지 구조 -----------------
+
+union Payload
+{
+	// C2S
+	C2S_KeepAlive,
+	C2S_LoginRequest,
+	C2S_SignUpRequest,
+	C2S_PlayerListRequest,
+	C2S_GameReadyRequest,
+	C2S_MatchmakingRequest,
+
+	// S2C
+	S2C_KeepAlive,
+	S2C_LoginResponse,
+	S2C_SignUpResponse,
+	S2C_PlayerListResponse,
+	S2C_PlayerChangeState,
+	S2C_PlayerInOutLobby,
+	S2C_CountdownStartGame,
+	S2C_StartGame,
+	S2C_MatchmakingResponse
+}
+
+// 실제 네트워크로 전송될 최종 데이터 구조
+table MessageEnvelope
+{
+	timestamp: uint64;
+	body: Payload;
+}
+
+root_type MessageEnvelope;
