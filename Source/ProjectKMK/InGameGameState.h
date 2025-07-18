@@ -13,9 +13,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, EGameState, New
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTeamDeathCountChanged, int32, CurrentTeamDeathCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRestartCountdownChanged, int32, RestartCountdown);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerJoined, AInGamePlayerState*, PlayerState);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerLeft, AInGamePlayerState*, PlayerState);
-
 /**
  * 
  */
@@ -27,12 +24,10 @@ public:
 	AInGameGameState();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	virtual void AddPlayerState(APlayerState* PS) override;
-	virtual void RemovePlayerState(APlayerState* PS) override;
 
 public:
 	UFUNCTION()
@@ -47,15 +42,10 @@ public:
 	UFUNCTION()
 	void OnRep_RestartCountdown();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_PlayerJoined(AInGamePlayerState* NewPS);
-	void Multicast_PlayerJoined_Implementation(AInGamePlayerState* NewPS);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_PlayerLeft(AInGamePlayerState* LeftPS);
-	void Multicast_PlayerLeft_Implementation(AInGamePlayerState* LeftPS);
-
 public:
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	bool bShuttingDown = false;
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentGameState, BlueprintReadOnly, Category = "Game State")
 	EGameState CurrentGameState;
@@ -75,11 +65,4 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnRestartCountdownChanged OnRestartCountdownChanged;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnPlayerJoined OnPlayerJoinedDelegate;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnPlayerLeft  OnPlayerLeftDelegate;
-
 };

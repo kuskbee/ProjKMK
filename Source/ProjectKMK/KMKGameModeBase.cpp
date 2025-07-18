@@ -131,15 +131,19 @@ void AKMKGameModeBase::BeginPlay()
 //	}
 //}
 //
-//void AKMKGameModeBase::Logout(AController* Exiting)
-//{
-//	if (AInGameGameState* GS = GetGameState<AInGameGameState>())
-//	{
-//		GS->Multicast_PlayerLeft(Cast<AInGamePlayerState>(Exiting->PlayerState));
-//	}
-//
-//	Super::Logout(Exiting);
-//}
+void AKMKGameModeBase::Logout(AController* Exiting)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AKMKGameModeBase] Logout"));
+	if (Exiting && Exiting->PlayerState)
+	{
+	    // 이 로그가 출력되면, 아래 줄에서 출력되는 PlayerState의 전체 이름을 복사해야 합니다.
+	     UE_LOG(LogTemp, Warning, TEXT("[AKMKGameModeBase] Logout ========================================================="));
+	     UE_LOG(LogTemp, Warning, TEXT("[AKMKGameModeBase] Logout INVESTIGATING: PlayerState about to	be destroyed."));
+	     UE_LOG(LogTemp, Warning, TEXT("[AKMKGameModeBase] Logout Full Name to copy: %s"), *Exiting->PlayerState->GetFullName());
+	     UE_LOG(LogTemp, Warning, TEXT("[AKMKGameModeBase] Logout ========================================================"));
+	}
+	Super::Logout(Exiting);
+}
 
 ARespawnPoint* AKMKGameModeBase::GetAvailableRespawnPoint()
 {

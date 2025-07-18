@@ -9,6 +9,7 @@
 
 class UHudWidget;
 class UStatusComponent;
+class AInGamePlayerState;
 
 /**
  * 
@@ -36,6 +37,8 @@ public:
 
 	void BindGameStateEvent();
 
+	void BindPlayerStateEvent(AInGamePlayerState* PS);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UHudWidget> HudWidget;
 
@@ -55,4 +58,10 @@ public:
 
 	UFUNCTION()
 	void OnRestartCountdownChanged(int32 RestartCountdown);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnDestroyedPlayerState(AActor* DestroyedActor);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdatePlayerListUI();
 };

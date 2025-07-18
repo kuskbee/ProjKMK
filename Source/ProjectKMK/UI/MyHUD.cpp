@@ -12,6 +12,7 @@
 #include "TimerManager.h"
 #include "UITypes.h"
 #include "../InGameGameState.h"
+#include "../Player/InGamePlayerState.h"
 
 void AMyHUD::BeginPlay()
 {
@@ -127,6 +128,19 @@ void AMyHUD::BindGameStateEvent()
 		OnRemainingLives(RemainingLives);
 	}
 
+}
+
+void AMyHUD::BindPlayerStateEvent(AInGamePlayerState* PS)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[AMyHUD] BindPlayerStateEvent"));
+	if (IsValid(PS))
+	{
+		PS->OnDestroyed.AddDynamic(this, &AMyHUD::OnDestroyedPlayerState);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[AMyHUD] BindPlayerStateEvent PlayerState is Invalid!!"));
+	}
 }
 
 void AMyHUD::OnGameStateChanged(EGameState NewState)

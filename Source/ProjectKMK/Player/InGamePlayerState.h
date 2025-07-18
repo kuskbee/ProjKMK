@@ -18,6 +18,8 @@ protected:
 
 public:
 	virtual void BeginPlay() override;
+	void BindEventToHUD();
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION()
 	void OnRep_Nickname();
@@ -32,5 +34,4 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnSetUserNickname OnSetUserNicknameDelegate;
-
 };

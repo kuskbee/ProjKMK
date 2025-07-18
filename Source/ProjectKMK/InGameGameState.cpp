@@ -35,6 +35,13 @@ void AInGameGameState::BeginPlay()
 
 }
 
+void AInGameGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	bShuttingDown = true;
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void AInGameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -43,31 +50,6 @@ void AInGameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AInGameGameState, ReplicatedTeamDeathCount);
 	DOREPLIFETIME(AInGameGameState, RestartCountDown);
 }
-
-void AInGameGameState::AddPlayerState(APlayerState* PS)
-{
-	Super::AddPlayerState(PS);
-	PS->ForceNetUpdate();
-
-	FTimerHandle Tmp;
-	GetWorld()->GetTimerManager().SetTimerForNextTick(
-		[this, PS]()
-		{
-			if (IsValid(PS))
-			{
-				Multicast_PlayerJoined(Cast<AInGamePlayerState>(PS));
-			}
-		});
-}
-
-void AInGameGameState::RemovePlayerState(APlayerState* PS)
-{
-	Super::RemovePlayerState(PS);
-	PS->ForceNetUpdate();
-
-	Multicast_PlayerLeft(Cast<AInGamePlayerState>(PS));
-}
-
 
 void AInGameGameState::OnRep_CurrentGameState()
 {
@@ -130,14 +112,3 @@ void AInGameGameState::OnRep_RestartCountdown()
 	UE_LOG(LogTemp, Warning, TEXT("[AInGameGameState::OnRep_RestartCountdown] %d"), RestartCountDown);
 	OnRestartCountdownChanged.Broadcast(RestartCountDown);
 }
-
-void AInGameGameState::Multicast_PlayerJoined_Implementation(AInGamePlayerState* NewPS)
-{
-	OnPlayerJoinedDelegate.Broadcast(NewPS);
-}
-
-void AInGameGameState::Multicast_PlayerLeft_Implementation(AInGamePlayerState* LeftPS)
-{
-	OnPlayerLeftDelegate.Broadcast(LeftPS);
-}
-

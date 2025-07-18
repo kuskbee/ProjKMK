@@ -21,6 +21,8 @@
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
 #include "Interfaces/CombatReactInterface.h"
+#include "InGameGameState.h"
+#include "Player/InGamePlayerState.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -152,6 +154,8 @@ void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		EquippedWeapon->Destroy();
 		EquippedWeapon = nullptr;
 	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
